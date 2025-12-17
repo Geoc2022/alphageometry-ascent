@@ -1,12 +1,10 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyList, PyTuple};
 use ascent::ascent;
 
 // Define a generic Ascent program wrapper
 #[pyclass]
 struct AscentProgram {
     relations: std::collections::HashMap<String, Vec<Vec<i64>>>,
-    rules: Vec<String>,
 }
 
 #[pymethods]
@@ -15,7 +13,6 @@ impl AscentProgram {
     fn new() -> Self {
         AscentProgram {
             relations: std::collections::HashMap::new(),
-            rules: Vec::new(),
         }
     }
     
@@ -81,7 +78,7 @@ impl GraphProgram {
 }
 
 #[pymodule]
-fn ascent_py(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ascent_py(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AscentProgram>()?;
     m.add_class::<GraphProgram>()?;
     Ok(())
