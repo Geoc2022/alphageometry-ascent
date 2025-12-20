@@ -1,38 +1,132 @@
 """Python bindings for Ascent Datalog"""
 
-from .ascent_py import GraphProgram as _GraphProgram
+from .ascent_py import GeometryProgram as _GeometryProgram
 from typing import List, Tuple
 
 
-class GraphProgram:
-    """High-level Python wrapper for graph reachability queries"""
+class GeometryProgram:
+    """High-level Python wrapper for geometric deduction queries"""
 
     def __init__(self):
-        self._prog = _GraphProgram()
+        self._prog = _GeometryProgram()
 
-    def add_edge(self, from_node: int, to_node: int):
-        """Add an edge to the graph"""
-        self._prog.add_edge(from_node, to_node)
+    # Input methods
+    def add_point(self, name: str):
+        """Add a point to the geometry"""
+        self._prog.add_point(name)
 
-    def add_edges(self, edges: List[Tuple[int, int]]):
-        """Add multiple edges at once"""
-        for from_node, to_node in edges:
-            self.add_edge(from_node, to_node)
+    def add_collinear(self, a: str, b: str, c: str):
+        """Add collinearity fact: points a, b, c are collinear"""
+        self._prog.add_collinear(a, b, c)
+
+    def add_parallel(self, a: str, b: str, c: str, d: str):
+        """Add parallel fact: line AB is parallel to line CD"""
+        self._prog.add_parallel(a, b, c, d)
+
+    def add_perpendicular(self, a: str, b: str, c: str, d: str):
+        """Add perpendicular fact: line AB is perpendicular to line CD"""
+        self._prog.add_perpendicular(a, b, c, d)
+
+    def add_congruent(self, a: str, b: str, c: str, d: str):
+        """Add congruence fact: segment AB is congruent to segment CD"""
+        self._prog.add_congruent(a, b, c, d)
+
+    def add_equal_angle(self, a: str, b: str, c: str, d: str, e: str, f: str):
+        """Add equal angle fact: angle ABC equals angle DEF"""
+        self._prog.add_equal_angle(a, b, c, d, e, f)
+
+    def add_cyclic(self, a: str, b: str, c: str, d: str):
+        """Add cyclic fact: points A, B, C, D lie on the same circle"""
+        self._prog.add_cyclic(a, b, c, d)
+
+    def add_midpoint(self, m: str, a: str, b: str):
+        """Add midpoint fact: M is the midpoint of segment AB"""
+        self._prog.add_midpoint(m, a, b)
+
+    def add_contri1(self, a: str, b: str, c: str, d: str, e: str, f: str):
+        """Add congruent triangles fact (same orientation): triangle ABC ≅ triangle DEF"""
+        self._prog.add_contri1(a, b, c, d, e, f)
+
+    def add_contri2(self, a: str, b: str, c: str, d: str, e: str, f: str):
+        """Add congruent triangles fact (opposite orientation): triangle ABC ≅ triangle DEF"""
+        self._prog.add_contri2(a, b, c, d, e, f)
+
+    def add_simtri1(self, a: str, b: str, c: str, d: str, e: str, f: str):
+        """Add similar triangles fact (same orientation): triangle ABC ~ triangle DEF"""
+        self._prog.add_simtri1(a, b, c, d, e, f)
+
+    def add_simtri2(self, a: str, b: str, c: str, d: str, e: str, f: str):
+        """Add similar triangles fact (opposite orientation): triangle ABC ~ triangle DEF"""
+        self._prog.add_simtri2(a, b, c, d, e, f)
 
     def run(self):
-        """Execute the Datalog program"""
+        """Execute the Datalog deduction rules"""
         self._prog.run()
 
-    def get_paths(self) -> List[Tuple[int, int]]:
-        """Get all computed paths"""
-        return self._prog.get_paths()
+    # Output methods
+    def get_collinear(self) -> List[Tuple[str, str, str]]:
+        """Get all deduced collinear point sets"""
+        return self._prog.get_collinear()
 
-    def get_edges(self) -> List[Tuple[int, int]]:
-        """Get all edges"""
-        return self._prog.get_edges()
+    def get_parallel(self) -> List[Tuple[str, str, str, str]]:
+        """Get all deduced parallel relationships"""
+        return self._prog.get_parallel()
+
+    def get_perpendicular(self) -> List[Tuple[str, str, str, str]]:
+        """Get all deduced perpendicular relationships"""
+        return self._prog.get_perpendicular()
+
+    def get_congruent(self) -> List[Tuple[str, str, str, str]]:
+        """Get all deduced congruent segments"""
+        return self._prog.get_congruent()
+
+    def get_equal_angles(self) -> List[Tuple[str, str, str, str, str, str]]:
+        """Get all deduced equal angles"""
+        return self._prog.get_equal_angles()
+
+    def get_cyclic(self) -> List[Tuple[str, str, str, str]]:
+        """Get all deduced cyclic point sets"""
+        return self._prog.get_cyclic()
+
+    def get_midpoint(self) -> List[Tuple[str, str, str]]:
+        """Get all deduced midpoint relationships"""
+        return self._prog.get_midpoint()
+
+    def get_contri1(self) -> List[Tuple[str, str, str, str, str, str]]:
+        """Get all deduced congruent triangles (same orientation)"""
+        return self._prog.get_contri1()
+
+    def get_contri2(self) -> List[Tuple[str, str, str, str, str, str]]:
+        """Get all deduced congruent triangles (opposite orientation)"""
+        return self._prog.get_contri2()
+
+    def get_simtri1(self) -> List[Tuple[str, str, str, str, str, str]]:
+        """Get all deduced similar triangles (same orientation)"""
+        return self._prog.get_simtri1()
+
+    def get_simtri2(self) -> List[Tuple[str, str, str, str, str, str]]:
+        """Get all deduced similar triangles (opposite orientation)"""
+        return self._prog.get_simtri2()
+
+    def get_equal_ratios(self) -> List[Tuple[str, str, str, str, str, str, str, str]]:
+        """Get all deduced equal ratios"""
+        return self._prog.get_equal_ratios()
+
+    def get_similar_triangles(self) -> List[Tuple[str, str, str, str, str, str]]:
+        """Get all deduced similar triangles (both orientations combined)"""
+        return self.get_simtri1() + self.get_simtri2()
+
+    def get_congruent_triangles(self) -> List[Tuple[str, str, str, str, str, str]]:
+        """Get all deduced congruent triangles (both orientations combined)"""
+        return self.get_contri1() + self.get_contri2()
 
     def __repr__(self):
-        return f"GraphProgram(edges={len(self.get_edges())})"
-
-
-__all__ = ["GraphProgram"]
+        parallels = len(self.get_parallel())
+        congruent = len(self.get_congruent())
+        angles = len(self.get_equal_angles())
+        contri = len(self.get_contri1()) + len(self.get_contri2())
+        simtri = len(self.get_simtri1()) + len(self.get_simtri2())
+        return (
+            f"<GeometryProgram: {parallels} parallels, {congruent} congruences, "
+            f"{angles} equal angles, {contri} congruent triangles, {simtri} similar triangles>"
+        )
