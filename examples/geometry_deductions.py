@@ -19,20 +19,21 @@ def parallelogram_example():
     - BC ≅ DA (opposite sides congruent)
     - Various equal angles
     """
-    print("=" * 70)
+    print("=" * 50)
     print("PARALLELOGRAM PROPERTY DEDUCTION")
-    print("=" * 70)
+    print("=" * 50)
     print()
 
     prog = GeometryProgram()
 
-    # Define points
-    for point in ["A", "B", "C", "D"]:
-        prog.add_point(point)
+    prog.add_point("A", 0, 0)
+    prog.add_point("B", 4, 0)
+    prog.add_point("C", 5, 3)
+    prog.add_point("D", 1, 3)
 
     print("Given facts:")
-    print("  • AB || CD (opposite sides parallel)")
-    print("  • BC || DA (opposite sides parallel)")
+    print(" - AB || CD (opposite sides parallel)")
+    print(" - BC || DA (opposite sides parallel)")
     print()
 
     # Add parallelogram properties as facts
@@ -51,7 +52,7 @@ def parallelogram_example():
         pair1 = tuple(sorted([a + b, c + d]))
         if pair1 not in unique_parallels:
             unique_parallels.add(pair1)
-            print(f"  • {a}{b} || {c}{d}")
+            print(f" - {a}{b} || {c}{d}")
     print()
 
     # Display deduced congruent segments
@@ -65,7 +66,7 @@ def parallelogram_example():
         pair = tuple(sorted([seg1, seg2]))
         if pair not in unique_congs:
             unique_congs.add(pair)
-            print(f"  • {a}{b} ≅ {c}{d}")
+            print(f" - {a}{b} ≅ {c}{d}")
     print()
 
     # Display deduced equal angles
@@ -77,7 +78,14 @@ def parallelogram_example():
         norm_pair = tuple(sorted(angle_pair))
         if norm_pair not in unique_angles:
             unique_angles.add(norm_pair)
-            print(f"  • ∠{a}{b}{c} = ∠{d}{e}{f}")
+            print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
+    print()
+
+    # Display congruent triangles if any
+    print("Deduced Congruent Triangles:")
+    congruent_triangles = prog.get_congruent_triangles()
+    for a, b, c, d, e, f in congruent_triangles:
+        print(f" - △{a}{b}{c} ≅ △{d}{e}{f}")
     print()
 
 
@@ -87,20 +95,23 @@ def triangle_similarity_example():
     If two angles of triangle ABC equal two angles of triangle DEF,
     then the triangles are similar.
     """
-    print("=" * 70)
+    print("=" * 50)
     print("TRIANGLE SIMILARITY (AA CRITERION)")
-    print("=" * 70)
+    print("=" * 50)
     print()
 
     prog = GeometryProgram()
 
-    # Define points for two triangles
-    for point in ["A", "B", "C", "D", "E", "F"]:
-        prog.add_point(point)
+    prog.add_point("A", 0, 0)
+    prog.add_point("B", 1, 0)
+    prog.add_point("C", 0, 1)
+    prog.add_point("D", 0, 0)
+    prog.add_point("E", 2, 0)
+    prog.add_point("F", 0, 2)
 
     print("Given facts:")
-    print("  • ∠CAB = ∠FDE (angle at A equals angle at D)")
-    print("  • ∠BCA = ∠EFD (angle at C equals angle at F)")
+    print(" - ∠CAB = ∠FDE (angle at A equals angle at D)")
+    print(" - ∠BCA = ∠EFD (angle at C equals angle at F)")
     print()
 
     # Add equal angles (AA criterion)
@@ -114,7 +125,14 @@ def triangle_similarity_example():
     print("Deduced Similar Triangles:")
     similar = prog.get_similar_triangles()
     for a, b, c, d, e, f in similar:
-        print(f"  • △{a}{b}{c} ~ △{d}{e}{f}")
+        print(f" - △{a}{b}{c} ~ △{d}{e}{f}")
+    print()
+
+    # Display congruent triangles if any
+    print("Deduced Congruent Triangles:")
+    congruent = prog.get_congruent_triangles()
+    for a, b, c, d, e, f in congruent:
+        print(f" - △{a}{b}{c} ≅ △{d}{e}{f}")
     print()
 
     # Display all deduced equal angles (including symmetric ones)
@@ -125,7 +143,7 @@ def triangle_similarity_example():
         key = tuple(sorted([f"{a}{b}{c}", f"{d}{e}{f}"]))
         if key not in shown:
             shown.add(key)
-            print(f"  • ∠{a}{b}{c} = ∠{d}{e}{f}")
+            print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
     print()
 
 
@@ -134,9 +152,9 @@ def transitive_parallel_example():
     Demonstrate parallel line transitivity:
     If AB || CD and AB || EF, then CD || EF
     """
-    print("=" * 70)
+    print("=" * 50)
     print("PARALLEL LINE TRANSITIVITY")
-    print("=" * 70)
+    print("=" * 50)
     print()
 
     prog = GeometryProgram()
@@ -146,8 +164,8 @@ def transitive_parallel_example():
         prog.add_point(point)
 
     print("Given facts:")
-    print("  • AB || CD")
-    print("  • AB || EF")
+    print(" - AB || CD")
+    print(" - AB || EF")
     print()
 
     # Add parallel facts
@@ -165,7 +183,7 @@ def transitive_parallel_example():
         key = tuple(sorted([tuple(sorted([a, b])), tuple(sorted([c, d]))]))
         if key not in shown:
             shown.add(key)
-            print(f"  • {a}{b} || {c}{d}")
+            print(f" - {a}{b} || {c}{d}")
 
     print()
     print("✓ Successfully deduced: CD || EF (by transitivity)")
@@ -178,9 +196,9 @@ def main():
     triangle_similarity_example()
     transitive_parallel_example()
 
-    print("=" * 70)
+    print("=" * 50)
     print("All geometric deductions completed successfully!")
-    print("=" * 70)
+    print("=" * 50)
 
 
 if __name__ == "__main__":
