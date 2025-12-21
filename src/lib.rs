@@ -126,6 +126,10 @@ impl GeometryProgram {
         self.simtri2_facts.push((a, b, c, d, e, f));
     }
 
+    fn add_equal_ratio(&mut self, a: String, b: String, c: String, d: String, e: String, f: String, g: String, h: String) {
+        self.derived_equal_ratios.push((a, b, c, d, e, f, g, h));
+    }
+
     fn run(&mut self) {
         let points: Vec<String> = self.points.iter()
             .map(|(name, _, _)| name.clone())
@@ -188,6 +192,7 @@ impl GeometryProgram {
             cyclic(a, c, b, d) <-- cyclic(a, b, c, d);
 
             sameclock(d, e, f, a, b, c) <-- sameclock(a, b, c, d, e, f);
+            sameclock(a, b, c, f, d, e) <-- sameclock(a, b, c, d, e, f);
             sameclock(c, b, a, f, e, d) <-- sameclock(a, b, c, d, e, f);
 
             eq_ratio(e, f, g, h, a, b, c, d) <-- eq_ratio(a, b, c, d, e, f, g, h);
@@ -262,9 +267,9 @@ impl GeometryProgram {
             equal_angle(e, a, b, e, c, d) <-- parallel(a, b, c, d), collinear(a, e, c),
                 if a != b && a != c && a != d && b != c && b != d && c != d && a != e && c != e;
 
-            // Parallelogram Opposite Sides Congruent
-            congruent(a, b, c, d) <-- parallel(a, b, c, d), parallel(b, c, d, a),
-                if a != b && a != c && a != d && b != c && b != d && c != d;
+            // // Parallelogram Opposite Sides Congruent
+            // congruent(a, b, c, d) <-- parallel(a, b, c, d), parallel(b, c, d, a),
+            //     if a != b && a != c && a != d && b != c && b != d && c != d;
 
             // Col to Equal Angles
             equal_angle(a, e, d, a, e, c) <-- collinear(e, a, b), collinear(e, c, d),
@@ -292,7 +297,7 @@ impl GeometryProgram {
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            simtri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(b, c, a, e, f, d), sameclock(a, b, c, f, e, d),
+            simtri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), equal_angle(b, c, a, d, f, e), sameclock(a, b, c, f, e, d),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
@@ -304,7 +309,7 @@ impl GeometryProgram {
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, e, d), equal_angle(c, b, a, d, e, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
+            contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), equal_angle(c, b, a, d, e, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
@@ -316,7 +321,7 @@ impl GeometryProgram {
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            contri2(a, b, c, d, e, f) <-- equal_angle (b, a, c, f, e, d), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
+            contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
@@ -423,7 +428,7 @@ impl GeometryProgram {
         self.derived_simtri2.clone()
     }
 
-    fn get_equal_ratios(&self) -> Vec<(String, String, String, String, String, String, String, String)> {
+    fn get_equal_ratio(&self) -> Vec<(String, String, String, String, String, String, String, String)> {
         self.derived_equal_ratios.clone()
     }
 }
