@@ -1,6 +1,6 @@
 """Python bindings for Ascent Datalog"""
 
-from .ascent_py import GeometryProgram as _GeometryProgram
+from .ascent_py import DeductiveDatabase as _DeductiveDatabase
 from typing import List, Tuple
 import itertools
 
@@ -24,11 +24,11 @@ def same_orientation(
     return (area1 * area2) > 0
 
 
-class GeometryProgram:
+class DeductiveDatabase:
     """High-level Python wrapper for geometric deduction queries"""
 
     def __init__(self):
-        self._prog = _GeometryProgram()
+        self._prog = _DeductiveDatabase()
 
     # Input methods
     def add_point(self, name: str, x: float = 0.0, y: float = 0.0):
@@ -184,6 +184,6 @@ class GeometryProgram:
         contri = len(self.get_contri1()) + len(self.get_contri2())
         simtri = len(self.get_simtri1()) + len(self.get_simtri2())
         return (
-            f"<GeometryProgram: {parallels} parallels, {congruent} congruences, "
+            f"<DeductiveDatabase: {parallels} parallels, {congruent} congruences, "
             f"{angles} equal angles, {contri} congruent triangles, {simtri} similar triangles>"
         )

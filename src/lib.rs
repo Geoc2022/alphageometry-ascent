@@ -4,7 +4,7 @@ use ascent::ascent;
 
 
 #[pyclass]
-struct GeometryProgram {
+struct DeductiveDatabase {
     // Input facts
     points: Vec<(String, f64, f64)>,
     collinear_facts: Vec<(String, String, String)>,
@@ -37,10 +37,10 @@ struct GeometryProgram {
 }
 
 #[pymethods]
-impl GeometryProgram {
+impl DeductiveDatabase {
     #[new]
     fn new() -> Self {
-        GeometryProgram {
+        DeductiveDatabase {
             points: Vec::new(),
             collinear_facts: Vec::new(),
             parallel_facts: Vec::new(),
@@ -435,6 +435,6 @@ impl GeometryProgram {
 
 #[pymodule]
 fn ascent_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<GeometryProgram>()?;
+    m.add_class::<DeductiveDatabase>()?;
     Ok(())
 }

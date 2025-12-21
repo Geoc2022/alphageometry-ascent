@@ -1,4 +1,4 @@
-from ascent_py import GeometryProgram
+from ascent_py import DeductiveDatabase
 
 
 def flatten(data):
@@ -71,7 +71,7 @@ def parallelogram_example():
     print("=" * 50)
     print()
 
-    prog = GeometryProgram()
+    prog = DeductiveDatabase()
 
     prog.add_point("A", 0, 0)
     prog.add_point("B", 4, 0)
@@ -124,7 +124,7 @@ def triangle_similarity_example():
     print("=" * 50)
     print()
 
-    prog = GeometryProgram()
+    prog = DeductiveDatabase()
 
     prog.add_point("A", 0, 0)
     prog.add_point("B", 1, 0)
@@ -172,7 +172,7 @@ def transitive_parallel_example():
     print("=" * 50)
     print()
 
-    prog = GeometryProgram()
+    prog = DeductiveDatabase()
 
     for point in ["A", "B", "C", "D", "E", "F"]:
         prog.add_point(point)
