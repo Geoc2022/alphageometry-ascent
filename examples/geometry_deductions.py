@@ -1,11 +1,58 @@
-"""
-Geometric Deduction Example using Ascent
-
-This example demonstrates how Ascent can discover geometric relationships
-through logical deduction rules. We'll prove properties of a parallelogram.
-"""
-
 from ascent_py import GeometryProgram
+
+
+def flatten(data):
+    result = []
+    for item in data:
+        if isinstance(item, tuple):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return tuple(result)
+
+
+def unique_para(parallels):
+    unique = set()
+    for a, b, c, d in parallels:
+        seg1 = tuple(sorted([a, b]))
+        seg2 = tuple(sorted([c, d]))
+        if seg1 == seg2:
+            continue
+        pair = tuple(sorted([seg1, seg2]))
+        unique.add(flatten(pair))
+    return unique
+
+
+def unique_cong(congruents):
+    unique = set()
+    for a, b, c, d in congruents:
+        seg1 = tuple(sorted([a, b]))
+        seg2 = tuple(sorted([c, d]))
+        if seg1 == seg2:
+            continue
+        pair = tuple(sorted([seg1, seg2]))
+        unique.add(flatten(pair))
+    return unique
+
+
+def unique_angles(angles):
+    unique = set()
+    for a, b, c, d, e, f in angles:
+        if (a, b, c) == (d, e, f):
+            continue
+        norm_pair = tuple(sorted([(a, b, c), (d, e, f)]))
+        unique.add(flatten(norm_pair))
+    return unique
+
+
+def unique_triangles(triangles):
+    unique = set()
+    for a, b, c, d, e, f in triangles:
+        if (a, b, c) == (d, e, f):
+            continue
+        norm_pair = tuple(sorted([(a, b, c), (d, e, f)]))
+        unique.add(flatten(norm_pair))
+    return unique
 
 
 def parallelogram_example():
@@ -36,55 +83,32 @@ def parallelogram_example():
     print(" - BC || DA (opposite sides parallel)")
     print()
 
-    # Add parallelogram properties as facts
-    prog.add_parallel("A", "B", "C", "D")  # AB || CD
-    prog.add_parallel("B", "C", "D", "A")  # BC || DA
+    prog.add_parallel("A", "B", "C", "D")
+    prog.add_parallel("B", "C", "D", "A")
 
-    # Run deduction engine
     prog.run()
 
-    # Display deduced parallel relationships
     print("Deduced Parallel Relationships:")
     parallels = prog.get_parallel()
-    unique_parallels = set()
-    for a, b, c, d in parallels:
-        # Normalize to avoid duplicates
-        pair1 = tuple(sorted([a + b, c + d]))
-        if pair1 not in unique_parallels:
-            unique_parallels.add(pair1)
-            print(f" - {a}{b} || {c}{d}")
+    for a, b, c, d in unique_para(parallels):
+        print(f" - {a}{b} || {c}{d}")
     print()
 
-    # Display deduced congruent segments
     print("Deduced Congruent Segments:")
     congruents = prog.get_congruent()
-    unique_congs = set()
-    for a, b, c, d in congruents:
-        # Normalize to avoid duplicates
-        seg1 = tuple(sorted([a, b]))
-        seg2 = tuple(sorted([c, d]))
-        pair = tuple(sorted([seg1, seg2]))
-        if pair not in unique_congs:
-            unique_congs.add(pair)
-            print(f" - {a}{b} ≅ {c}{d}")
+    for a, b, c, d in unique_cong(congruents):
+        print(f" - {a}{b} ≅ {c}{d}")
     print()
 
-    # Display deduced equal angles
     print("Deduced Equal Angles:")
     angles = prog.get_equal_angles()
-    unique_angles = set()
-    for a, b, c, d, e, f in angles:
-        angle_pair = (f"{a}{b}{c}", f"{d}{e}{f}")
-        norm_pair = tuple(sorted(angle_pair))
-        if norm_pair not in unique_angles:
-            unique_angles.add(norm_pair)
-            print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
+    for a, b, c, d, e, f in unique_angles(angles):
+        print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
     print()
 
-    # Display congruent triangles if any
     print("Deduced Congruent Triangles:")
     congruent_triangles = prog.get_congruent_triangles()
-    for a, b, c, d, e, f in congruent_triangles:
+    for a, b, c, d, e, f in unique_triangles(congruent_triangles):
         print(f" - △{a}{b}{c} ≅ △{d}{e}{f}")
     print()
 
@@ -114,43 +138,34 @@ def triangle_similarity_example():
     print(" - ∠BCA = ∠EFD (angle at C equals angle at F)")
     print()
 
-    # Add equal angles (AA criterion)
-    prog.add_equal_angle("C", "A", "B", "F", "D", "E")  # ∠CAB = ∠FDE
-    prog.add_equal_angle("B", "C", "A", "E", "F", "D")  # ∠BCA = ∠EFD
+    prog.add_equal_angle("C", "A", "B", "F", "D", "E")
+    prog.add_equal_angle("B", "C", "A", "E", "F", "D")
 
-    # Run deduction engine
     prog.run()
 
-    # Display similar triangles
     print("Deduced Similar Triangles:")
     similar = prog.get_similar_triangles()
-    for a, b, c, d, e, f in similar:
+    for a, b, c, d, e, f in unique_triangles(similar):
         print(f" - △{a}{b}{c} ~ △{d}{e}{f}")
     print()
 
-    # Display congruent triangles if any
     print("Deduced Congruent Triangles:")
     congruent = prog.get_congruent_triangles()
-    for a, b, c, d, e, f in congruent:
+    for a, b, c, d, e, f in unique_triangles(congruent):
         print(f" - △{a}{b}{c} ≅ △{d}{e}{f}")
     print()
 
-    # Display all deduced equal angles (including symmetric ones)
     print("All Deduced Equal Angles:")
     angles = prog.get_equal_angles()
-    shown = set()
-    for a, b, c, d, e, f in angles:
-        key = tuple(sorted([f"{a}{b}{c}", f"{d}{e}{f}"]))
-        if key not in shown:
-            shown.add(key)
-            print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
+    for a, b, c, d, e, f in unique_angles(angles):
+        print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
     print()
 
 
 def transitive_parallel_example():
     """
     Demonstrate parallel line transitivity:
-    If AB || CD and AB || EF, then CD || EF
+    If AB || CD and AB || EF, then CD || EFF
     """
     print("=" * 50)
     print("PARALLEL LINE TRANSITIVITY")
@@ -159,7 +174,6 @@ def transitive_parallel_example():
 
     prog = GeometryProgram()
 
-    # Define points
     for point in ["A", "B", "C", "D", "E", "F"]:
         prog.add_point(point)
 
@@ -168,25 +182,15 @@ def transitive_parallel_example():
     print(" - AB || EF")
     print()
 
-    # Add parallel facts
     prog.add_parallel("A", "B", "C", "D")
     prog.add_parallel("A", "B", "E", "F")
 
-    # Run deduction engine
     prog.run()
 
-    # Display all deduced parallels
     print("Deduced Parallel Relationships:")
     parallels = prog.get_parallel()
-    shown = set()
-    for a, b, c, d in parallels:
-        key = tuple(sorted([tuple(sorted([a, b])), tuple(sorted([c, d]))]))
-        if key not in shown:
-            shown.add(key)
-            print(f" - {a}{b} || {c}{d}")
-
-    print()
-    print("✓ Successfully deduced: CD || EF (by transitivity)")
+    for a, b, c, d in unique_para(parallels):
+        print(f" - {a}{b} || {c}{d}")
     print()
 
 
@@ -195,10 +199,6 @@ def main():
     parallelogram_example()
     triangle_similarity_example()
     transitive_parallel_example()
-
-    print("=" * 50)
-    print("All geometric deductions completed successfully!")
-    print("=" * 50)
 
 
 if __name__ == "__main__":
