@@ -6,13 +6,14 @@ use ascent::ascent;
 #[pyclass]
 struct GeometryProgram {
     // Input facts
-    points: Vec<String>,
+    points: Vec<(String, f64, f64)>,
     collinear_facts: Vec<(String, String, String)>,
     parallel_facts: Vec<(String, String, String, String)>,
     perpendicular_facts: Vec<(String, String, String, String)>,
     congruent_facts: Vec<(String, String, String, String)>,
     equal_angle_facts: Vec<(String, String, String, String, String, String)>,
     cyclic_facts: Vec<(String, String, String, String)>,
+    sameclock_facts: Vec<(String, String, String, String, String, String)>,
     midpoint_facts: Vec<(String, String, String)>,
     contri1_facts: Vec<(String, String, String, String, String, String)>,
     contri2_facts: Vec<(String, String, String, String, String, String)>,
@@ -26,6 +27,7 @@ struct GeometryProgram {
     derived_congruent: Vec<(String, String, String, String)>,
     derived_equal_angles: Vec<(String, String, String, String, String, String)>,
     derived_cyclic: Vec<(String, String, String, String)>,
+    derived_sameclock: Vec<(String, String, String, String, String, String)>,
     derived_midpoint: Vec<(String, String, String)>,
     derived_contri1: Vec<(String, String, String, String, String, String)>,
     derived_contri2: Vec<(String, String, String, String, String, String)>,
@@ -46,18 +48,20 @@ impl GeometryProgram {
             congruent_facts: Vec::new(),
             equal_angle_facts: Vec::new(),
             cyclic_facts: Vec::new(),
+            sameclock_facts: Vec::new(),
             midpoint_facts: Vec::new(),
             contri1_facts: Vec::new(),
             contri2_facts: Vec::new(),
             simtri1_facts: Vec::new(),
             simtri2_facts: Vec::new(),
-            
+
             derived_collinear: Vec::new(),
             derived_parallel: Vec::new(),
             derived_perpendicular: Vec::new(),
             derived_congruent: Vec::new(),
             derived_equal_angles: Vec::new(),
             derived_cyclic: Vec::new(),
+            derived_sameclock: Vec::new(),
             derived_midpoint: Vec::new(),
             derived_contri1: Vec::new(),
             derived_contri2: Vec::new(),
@@ -67,11 +71,11 @@ impl GeometryProgram {
         }
     }
 
-    // Input methods
-    fn add_point(&mut self, name: String) {
-        if !self.points.contains(&name) {
-            self.points.push(name);
+    fn add_point(&mut self, name: String, x: f64, y: f64) {
+        if self.points.iter().any(|(n, _, _)| n == &name) {
+            return;
         }
+        self.points.push((name.clone(), x, y));
     }
 
     fn add_collinear(&mut self, a: String, b: String, c: String) {
@@ -98,6 +102,10 @@ impl GeometryProgram {
         self.cyclic_facts.push((a, b, c, d));
     }
 
+    fn add_sameclock(&mut self, a: String, b: String, c: String, d: String, e: String, f: String) {
+        self.sameclock_facts.push((a, b, c, d, e, f));
+    }
+
     fn add_midpoint(&mut self, a: String, b: String, c: String) {
         self.midpoint_facts.push((a, b, c));
     }
@@ -119,13 +127,17 @@ impl GeometryProgram {
     }
 
     fn run(&mut self) {
-        let points = self.points.clone();
+        let points: Vec<String> = self.points.iter()
+            .map(|(name, _, _)| name.clone())
+            .collect();
+
         let col_facts = self.collinear_facts.clone();
         let para_facts = self.parallel_facts.clone();
         let perp_facts = self.perpendicular_facts.clone();
         let cong_facts = self.congruent_facts.clone();
         let eqangle_facts = self.equal_angle_facts.clone();
         let cyclic_facts = self.cyclic_facts.clone();
+        let sameclock_facts = self.sameclock_facts.clone();
         let midp_facts = self.midpoint_facts.clone();
         let contri1_facts = self.contri1_facts.clone();
         let contri2_facts = self.contri2_facts.clone();
@@ -273,6 +285,54 @@ impl GeometryProgram {
             // Vertical Angles
             equal_angle(a, b, d, c, b, e) <-- collinear(a, b, c), collinear(d, b, e),
                 if a != c && a != d && a != e && b != c && b != d && b != e && c != d && c != e && d != e;
+
+            // AA Similarity
+            simtri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(b, c, a, e, f, d), sameclock(a, b, c, d, e, f),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+            simtri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(b, c, a, e, f, d), sameclock(a, b, c, f, e, d),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+
+            // ASA Congruence
+            contri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(c, b, a, f, e, d), congruent(a, b, d, e), sameclock(a, b, c, d, e, f),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+            contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, e, d), equal_angle(c, b, a, d, e, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+
+            // SAS Congruence
+            contri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, d, e, f),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+            contri2(a, b, c, d, e, f) <-- equal_angle (b, a, c, f, e, d), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+
+            // SSS Congruence
+            contri1(a, b, c, d, e, f) <-- congruent(a, c, d, f), congruent(a, b, d, e), congruent(c, b, f, e), sameclock(a, b, c, d, e, f),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+            contri2(a, b, c, d, e, f) <-- congruent(a, c, d, f), congruent(a, b, d, e), congruent(c, b, f, e), sameclock(a, b, c, f, e, d),
+                if a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
         }
 
         let mut prog = AscentProgram::default();
@@ -285,6 +345,7 @@ impl GeometryProgram {
         prog.congruent = cong_facts;
         prog.equal_angle = eqangle_facts;
         prog.cyclic = cyclic_facts;
+        prog.sameclock = sameclock_facts;
         prog.midpoint = midp_facts;
         prog.contri1 = contri1_facts;
         prog.contri2 = contri2_facts;
@@ -300,6 +361,7 @@ impl GeometryProgram {
         self.derived_congruent = prog.congruent;
         self.derived_equal_angles = prog.equal_angle;
         self.derived_cyclic = prog.cyclic;
+        self.derived_sameclock = prog.sameclock;
         self.derived_midpoint = prog.midpoint;
         self.derived_contri1 = prog.contri1;
         self.derived_contri2 = prog.contri2;
@@ -309,6 +371,10 @@ impl GeometryProgram {
     }
 
     // Output methods
+    fn get_points(&self) -> Vec<(String, f64, f64)> {
+        self.points.clone()
+    }
+
     fn get_collinear(&self) -> Vec<(String, String, String)> {
         self.derived_collinear.clone()
     }
@@ -331,6 +397,10 @@ impl GeometryProgram {
 
     fn get_cyclic(&self) -> Vec<(String, String, String, String)> {
         self.derived_cyclic.clone()
+    }
+
+    fn get_sameclock(&self) -> Vec<(String, String, String, String, String, String)> {
+        self.derived_sameclock.clone()
     }
 
     fn get_midpoint(&self) -> Vec<(String, String, String)> {

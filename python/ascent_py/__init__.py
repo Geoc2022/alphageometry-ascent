@@ -2,6 +2,26 @@
 
 from .ascent_py import GeometryProgram as _GeometryProgram
 from typing import List, Tuple
+import itertools
+
+
+def same_orientation(
+    l1: list[tuple[float, float]], l2: list[tuple[float, float]]
+) -> bool:
+    assert len(l1) == len(l2), "must be same size"
+
+    def edge_length(p, q):
+        return (q[0] - p[0]) * (q[1] + p[1])
+
+    area1 = 0
+    for i in range(len(l1)):
+        area1 += edge_length(l1[i], (l1[(i + 1) % len(l1)]))
+
+    area2 = 0
+    for i in range(len(l1)):
+        area2 += edge_length(l2[i], (l2[(i + 1) % len(l2)]))
+
+    return (area1 * area2) > 0
 
 
 class GeometryProgram:
@@ -11,9 +31,20 @@ class GeometryProgram:
         self._prog = _GeometryProgram()
 
     # Input methods
-    def add_point(self, name: str):
-        """Add a point to the geometry"""
-        self._prog.add_point(name)
+    def add_point(self, name: str, x: float = 0.0, y: float = 0.0):
+        """Add a point to the geometry with coordinates"""
+        self._prog.add_point(name, x, y)
+
+        # Add same_orientations:
+        # TODO: Optimize this
+        points = self._prog.get_points()
+        for pts in itertools.product(points, repeat=5):
+            choosen: list[tuple[str, float, float]] = list(pts)
+            choosen.append((name, x, y))
+            names = [p[0] for p in choosen]
+            coords = [(p[1], p[2]) for p in choosen]
+            if same_orientation(list(coords[:3]), list(coords[3:])) == 1:
+                self._prog.add_sameclock(*names)
 
     def add_collinear(self, a: str, b: str, c: str):
         """Add collinearity fact: points a, b, c are collinear"""
@@ -38,6 +69,10 @@ class GeometryProgram:
     def add_cyclic(self, a: str, b: str, c: str, d: str):
         """Add cyclic fact: points A, B, C, D lie on the same circle"""
         self._prog.add_cyclic(a, b, c, d)
+
+    def add_sameclock(self, a: str, b: str, c: str, d: str):
+        """Add sameclock fact: points A, B, C, D, E, F have the same orientation"""
+        self._prog.add_sameclock(a, b, c, d)
 
     def add_midpoint(self, m: str, a: str, b: str):
         """Add midpoint fact: M is the midpoint of segment AB"""
