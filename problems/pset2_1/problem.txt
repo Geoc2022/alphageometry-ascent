@@ -1,0 +1,1 @@
+Para A B C D; Para B C D A; Col A E C; col B E D; ? cong A E E C

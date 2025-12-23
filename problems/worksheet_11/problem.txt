@@ -1,0 +1,6 @@
+cyclic A B C D;
+col A O C;
+perp C E A C;
+para B C A D;
+col A D E;
+? eqratio B C C A A B E C

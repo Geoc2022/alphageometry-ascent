@@ -1,0 +1,8 @@
+col A D C;
+cyclic A D B E;
+col O A B;
+cong O A O B;
+cong O B O D;
+perp A B B C;
+para B E A C;
+? simtri2 A B E C A B

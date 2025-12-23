@@ -1,0 +1,1 @@
+Cong A B D E; Eqangle B A C E D F; Eqangle C B A F E D; ? Contri1 A B C D E F

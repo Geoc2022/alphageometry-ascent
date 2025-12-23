@@ -1,0 +1,1 @@
+cong A B D E; cong B C E F; cong C A F D; cong A B G H; cong B C H I; cong C A I G; ? contri1 A B C D E F; ? contri2 A B C G H I

@@ -1,0 +1,6 @@
+cong O A O B;
+cong O C O A;
+col O C P;
+perp P A O A;
+perp P B O B;
+? eqangle P O A B O P

@@ -1,0 +1,3 @@
+eqangle B C A E F D; cong B C E F; eqangle A B C D E F;
+eqangle B C A G I H; cong B C H I; eqangle A B C I H G; 
+? contri1 A B C D E F; ? contri2 A B C G H I

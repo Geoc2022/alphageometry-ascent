@@ -1,0 +1,3 @@
+eqangle C A B F D E; eqangle B C A E F D; eqangle A B C D E F;
+eqangle C A B H G I; eqangle B C A G I H; eqangle A B C I H G; 
+? simtri1 A B C D E F; ? simtri2 A B C G H I

@@ -1,0 +1,1 @@
+cong A B A C; cong B D D C; col B D C; ? contri2 B A D C A D; ? eqangle D B A A C D; ? eqangle C B A A C B

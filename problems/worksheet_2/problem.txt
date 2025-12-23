@@ -1,0 +1,3 @@
+cyclic A B C D;
+para A B D C;
+? contri2 A C D B D C
