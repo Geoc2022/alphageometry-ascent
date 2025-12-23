@@ -101,7 +101,7 @@ def parallelogram_example():
     print()
 
     print("Deduced Equal Angles:")
-    angles = prog.get_equal_angles()
+    angles = prog.get_equal_angle()
     for a, b, c, d, e, f in unique_angles(angles):
         print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
     print()
@@ -156,7 +156,7 @@ def triangle_similarity_example():
     print()
 
     print("All Deduced Equal Angles:")
-    angles = prog.get_equal_angles()
+    angles = prog.get_equal_angle()
     for a, b, c, d, e, f in unique_angles(angles):
         print(f" - ∠{a}{b}{c} = ∠{d}{e}{f}")
     print()
