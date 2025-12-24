@@ -200,13 +200,23 @@ impl DeductiveDatabase {
             eq_ratio(a, b, e, f, c, d, g, h) <-- eq_ratio(a, b, c, d, e, f, g, h);
 
             // ----------------------------------------------------------------
-            // Relation Data
+            // Trivial Statements
             // ----------------------------------------------------------------
+            congruent(a, b, a, b) <--
+                point(a), point(b),
+                if a != b;
+
+            equal_angle(a, b, c, a, b, c) <--
+                point(a), point(b), point(c),
+                if a != b && a != c && b != c;
 
             // Col implies parallel
             parallel(a, b, a, c) <-- collinear(a, b, c),
                 if a != b && a != c && b != c;
 
+            // ----------------------------------------------------------------
+            // Relation Data
+            // ----------------------------------------------------------------
             // Cyclic Quadrilateral Properties
             equal_angle(a, d, b, a, c, b) <-- cyclic(a, b, c, d);
             equal_angle(d, a, c, d, b, c) <-- cyclic(a, b, c, d);

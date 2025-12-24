@@ -48,16 +48,6 @@ class DeductiveDatabase:
                 # print("Adding sameclock for", names)
                 self.add_sameclock(*names)
 
-        # Add trivial congruences
-        for point in points:
-            if point != name:
-                self.add_congruent(name, point[0], name, point[0])
-
-        # Add trivial equal angles
-        for p1, p2 in itertools.combinations(points, 2):
-            if p1[0] != name and p2[0] != name:
-                self.add_equal_angle(p1[0], name, p2[0], p1[0], name, p2[0])
-
     def add_collinear(self, a: str, b: str, c: str):
         """Add collinearity fact: points a, b, c are collinear"""
         self._prog.add_collinear(a, b, c)
