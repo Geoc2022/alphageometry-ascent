@@ -202,6 +202,7 @@ impl DeductiveDatabase {
             // ----------------------------------------------------------------
             // Trivial Statements
             // ----------------------------------------------------------------
+
             congruent(a, b, a, b) <--
                 point(a), point(b),
                 if a != b;
@@ -210,90 +211,9 @@ impl DeductiveDatabase {
                 point(a), point(b), point(c),
                 if a != b && a != c && b != c;
 
-            // Col implies parallel
-            parallel(a, b, a, c) <-- collinear(a, b, c),
-                if a != b && a != c && b != c;
-
-            // ----------------------------------------------------------------
-            // Relation Data
-            // ----------------------------------------------------------------
-            equal_angle(a, d, b, a, c, b) <-- cyclic(a, b, c, d);
-            equal_angle(d, a, c, d, b, c) <-- cyclic(a, b, c, d);
-
-            congruent(a, m, m, b) <-- midpoint(m, a, b);
-            collinear(a, m, b) <-- midpoint(m, a, b);
-
-            congruent(a, b, d, e) <-- contri1(a, b, c, d, e, f);
-            congruent(b, c, e, f) <-- contri1(a, b, c, d, e, f);
-            congruent(c, a, f, d) <-- contri1(a, b, c, d, e, f);
-            equal_angle(a, b, c, d, e, f) <-- contri1(a, b, c, d, e, f);
-            equal_angle(b, c, a, e, f, d) <-- contri1(a, b, c, d, e, f);
-            equal_angle(c, a, b, f, d, e) <-- contri1(a, b, c, d, e, f);
-
-            congruent(a, b, d, e) <-- contri2(a, b, c, d, e, f);
-            congruent(b, c, e, f) <-- contri2(a, b, c, d, e, f);
-            congruent(c, a, f, d) <-- contri2(a, b, c, d, e, f);
-            equal_angle(a, b, c, f, e, d) <-- contri2(a, b, c, d, e, f);
-            equal_angle(b, c, a, d, f, e) <-- contri2(a, b, c, d, e, f);
-            equal_angle(c, a, b, e, d, f) <-- contri2(a, b, c, d, e, f);
-
-            equal_angle(c, a, b, f, d, e) <-- simtri1(a, b, c, d, e, f);
-            equal_angle(b, c, a, e, f, d) <-- simtri1(a, b, c, d, e, f);
-            equal_angle(a, b, c, d, e, f) <-- simtri1(a, b, c, d, e, f);
-            eq_ratio(a, b, d, e, b, c, e, f) <-- simtri1(a, b, c, d, e, f);
-            eq_ratio(b, c, e, f, c, a, f, d) <-- simtri1(a, b, c, d, e, f);
-            eq_ratio(a, b, d, e, c, a, f, d) <-- simtri1(a, b, c, d, e, f);
-
-            equal_angle(c, a, b, e, d, f) <-- simtri2(a, b, c, d, e, f);
-            equal_angle(b, c, a, d, f, e) <-- simtri2(a, b, c, d, e, f);
-            equal_angle(a, b, c, f, e, d) <-- simtri2(a, b, c, d, e, f);
-            eq_ratio(a, b, d, e, b, c, e, f) <-- simtri2(a, b, c, d, e, f);
-            eq_ratio(b, c, e, f, c, a, f, d) <-- simtri2(a, b, c, d, e, f);
-            eq_ratio(a, b, d, e, c, a, f, d) <-- simtri2(a, b, c, d, e, f);
-
             // ----------------------------------------------------------------
             // Deductive Rules
             // ----------------------------------------------------------------
-
-            // Congruent Transitivity
-            congruent(a, b, e, f) <-- congruent(a, b, c, d), congruent(c, d, e, f);
-
-            // Parallel Transitivity
-            parallel(c, d, e, f) <-- parallel(a, b, c, d), parallel(a, b, e, f);
-
-            // Parallel to Equal Angles
-            equal_angle(c, a, b, a, c, d) <-- parallel(a, b, c, d) 
-                if a != b && a != c && a != d && b != c && b != d && c != d;
-
-            // Transversal Alternate Interior Angles
-            equal_angle(b, a, e, d, c, e) <-- parallel(a, b, c, d), collinear(a, e, c),
-                if a != b && a != c && a != d && b != c && b != d && c != d && a != e && c != e;
-            equal_angle(e, a, b, e, c, d) <-- parallel(a, b, c, d), collinear(a, e, c),
-                if a != b && a != c && a != d && b != c && b != d && c != d && a != e && c != e;
-
-            // // Parallelogram Opposite Sides Congruent
-            // congruent(a, b, c, d) <-- parallel(a, b, c, d), parallel(b, c, d, a),
-            //     if a != b && a != c && a != d && b != c && b != d && c != d;
-
-            // Col to Equal Angles
-            equal_angle(a, e, d, a, e, c) <-- collinear(e, a, b), collinear(e, c, d),
-                if a != b && a != c && a != d && b != c && b != d && c != d && a != e && b != e && c != e && d != e;
-            equal_angle(b, e, d, b, e, c) <-- collinear(e, a, b), collinear(e, c, d),
-                if a != b && a != c && a != d && b != c && b != d && c != d && a != e && b != e && c != e && d != e;
-            equal_angle(c, e, a, c, e, b) <-- collinear(e, a, b), collinear(e, c, d),
-                if a != b && a != c && a != d && b != c && b != d && c != d && a != e && b != e && c != e && d != e;
-            equal_angle(d, e, a, d, e, b) <-- collinear(e, a, b), collinear(e, c, d),
-                if a != b && a != c && a != d && b != c && b != d && c != d && a != e && b != e && c != e && d != e;
-
-            // Perpendicular + Perpendicular = Parallel
-            parallel(a, b, e, f) <-- perpendicular(a, b, c, d), perpendicular(e, f, c, d);
-
-            // Perpendicular + Parallel = Perpendicular
-            perpendicular(c, d, e, f) <-- parallel(a, b, c, d), perpendicular(a, b, e, f);
-
-            // Vertical Angles
-            equal_angle(a, b, d, c, b, e) <-- collinear(a, b, c), collinear(d, b, e),
-                if a != c && a != d && a != e && b != c && b != d && b != e && c != d && c != e && d != e;
 
             // AA Similarity
             simtri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(b, c, a, e, f, d), sameclock(a, b, c, d, e, f),

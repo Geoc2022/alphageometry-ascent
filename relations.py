@@ -87,11 +87,39 @@ class AngleRow:
     constant: float = 0.0  # constant coefficient
     data: dict[frozenset[Point], float] = field(default_factory=dict)
 
+    def __str__(self) -> str:
+        res = []
+        for line, value in self.data.items():
+            if not value:
+                continue
+            line_str = "".join(sorted([str(p) for p in list(line)]))
+            res.append(str(value) + " " + line_str)
+        return str(self.constant) + " = " + "\t+ ".join(res)
+
+    @property
+    def is_zero_row(self) -> bool:
+        return all(value == 0 for value in self.data.values()) and isclose(
+            self.constant, 0.0
+        )
+
 
 @dataclass
 class RatioRow:
     predicate: Predicate
     data: dict[frozenset[Point], float] = field(default_factory=dict)
+
+    def __str__(self) -> str:
+        res = []
+        for line, value in self.data.items():
+            if not value:
+                continue
+            line_str = "".join(sorted([str(p) for p in list(line)]))
+            res.append(str(value) + " " + line_str)
+        return "0 = " + "\t+ ".join(res)
+
+    @property
+    def is_zero_row(self) -> bool:
+        return all(value == 0 for value in self.data.values())
 
 
 def collect_rows(
@@ -366,6 +394,8 @@ class Para(Predicate):
         self.data = frozenset([frozenset({a, b}), frozenset({c, d})])
 
     def to_angle_rows(self) -> list[AngleRow]:
+        if len(self.data) != 2:
+            return [AngleRow(predicate=self, data={})]
         return [
             AngleRow(
                 predicate=self, data={list(self.data)[0]: 1, list(self.data)[1]: -1}

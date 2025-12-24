@@ -4,7 +4,7 @@ import geogebra
 import constructions
 import dd
 from problem import Problem
-from relations import Point, Sameclock
+from relations import Point
 
 
 def construct_problem(
@@ -76,9 +76,10 @@ def prove(problem: Problem):
 
             # Add new predicates to the deductions buffer
             for pred in new_predicates:
-                if pred.__class__.__name__ != "Sameclock" and len(pred.data) != 1:
-                    print(pred)
                 problem.add_deduction(pred)
+
+        if not problem.is_solved():
+            problem.search_ar()
 
         # Flush all deductions at once
         problem.flush_deductions()
