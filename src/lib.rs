@@ -217,15 +217,12 @@ impl DeductiveDatabase {
             // ----------------------------------------------------------------
             // Relation Data
             // ----------------------------------------------------------------
-            // Cyclic Quadrilateral Properties
             equal_angle(a, d, b, a, c, b) <-- cyclic(a, b, c, d);
             equal_angle(d, a, c, d, b, c) <-- cyclic(a, b, c, d);
 
-            // Midpoint implies congruence and collinearity
             congruent(a, m, m, b) <-- midpoint(m, a, b);
             collinear(a, m, b) <-- midpoint(m, a, b);
 
-            // Congruent Triangles imply corresponding parts (Contri1)
             congruent(a, b, d, e) <-- contri1(a, b, c, d, e, f);
             congruent(b, c, e, f) <-- contri1(a, b, c, d, e, f);
             congruent(c, a, f, d) <-- contri1(a, b, c, d, e, f);
@@ -233,7 +230,6 @@ impl DeductiveDatabase {
             equal_angle(b, c, a, e, f, d) <-- contri1(a, b, c, d, e, f);
             equal_angle(c, a, b, f, d, e) <-- contri1(a, b, c, d, e, f);
 
-            // Congruent Triangles imply corresponding parts (Contri2)
             congruent(a, b, d, e) <-- contri2(a, b, c, d, e, f);
             congruent(b, c, e, f) <-- contri2(a, b, c, d, e, f);
             congruent(c, a, f, d) <-- contri2(a, b, c, d, e, f);
@@ -241,7 +237,6 @@ impl DeductiveDatabase {
             equal_angle(b, c, a, d, f, e) <-- contri2(a, b, c, d, e, f);
             equal_angle(c, a, b, e, d, f) <-- contri2(a, b, c, d, e, f);
 
-            // Similar Triangles imply equal angles and ratios (Simtri1)
             equal_angle(c, a, b, f, d, e) <-- simtri1(a, b, c, d, e, f);
             equal_angle(b, c, a, e, f, d) <-- simtri1(a, b, c, d, e, f);
             equal_angle(a, b, c, d, e, f) <-- simtri1(a, b, c, d, e, f);
@@ -249,7 +244,6 @@ impl DeductiveDatabase {
             eq_ratio(b, c, e, f, c, a, f, d) <-- simtri1(a, b, c, d, e, f);
             eq_ratio(a, b, d, e, c, a, f, d) <-- simtri1(a, b, c, d, e, f);
 
-            // Similar Triangles imply equal angles and ratios (Simtri2)
             equal_angle(c, a, b, e, d, f) <-- simtri2(a, b, c, d, e, f);
             equal_angle(b, c, a, d, f, e) <-- simtri2(a, b, c, d, e, f);
             equal_angle(a, b, c, f, e, d) <-- simtri2(a, b, c, d, e, f);
