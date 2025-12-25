@@ -63,7 +63,9 @@ class DD:
     def _add_point(self, point: Point):
         """Add a point to the database and maintain mappings."""
         if point not in self.name_by_point:
-            self.db.add_point(point.name, point.x, point.y)
+            x = int(point.x * 1_000_000)
+            y = int(point.y * 1_000_000)
+            self.db.add_point(x, y, point.name)
             self.point_by_name[point.name] = point
             self.name_by_point[point] = point.name
 

@@ -31,18 +31,18 @@ class DeductiveDatabase:
         self._prog = _DeductiveDatabase()
 
     # Input methods
-    def add_point(self, name: str, x: float = 0.0, y: float = 0.0):
+    def add_point(self, x: float = 0.0, y: float = 0.0, name: str = ""):
         """Add a point to the geometry with coordinates"""
-        self._prog.add_point(name, x, y)
+        self._prog.add_point(x, y, name)
 
         # Add same_orientations:
         # TODO: Optimize this
         points = self._prog.get_points()
         for pts in itertools.product(points, repeat=5):
-            choosen: list[tuple[str, float, float]] = list(pts)
-            choosen.append((name, x, y))
-            names = [p[0] for p in choosen]
-            coords = [(p[1], p[2]) for p in choosen]
+            choosen: list[tuple[float, float, str]] = list(pts)
+            choosen.append((x, y, name))
+            names = [p[2] for p in choosen]
+            coords = [(p[0], p[1]) for p in choosen]
             orientation = same_orientation(list(coords[:3]), list(coords[3:]))
             if orientation == 1:
                 # print("Adding sameclock for", names)

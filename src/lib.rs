@@ -6,7 +6,7 @@ use ascent::ascent;
 #[pyclass]
 struct DeductiveDatabase {
     // Input facts
-    points: Vec<(String, f64, f64)>,
+    points: Vec<(i64, i64, String)>,
     col_facts: Vec<(String, String, String)>,
     para_facts: Vec<(String, String, String, String)>,
     perp_facts: Vec<(String, String, String, String)>,
@@ -23,6 +23,7 @@ struct DeductiveDatabase {
     aconst_facts: Vec<(String, String, String, i32, i32)>,
 
     // Derived results
+    derived_point_coords: Vec<(String, i64, i64)>,
     derived_col: Vec<(String, String, String)>,
     derived_para: Vec<(String, String, String, String)>,
     derived_perp: Vec<(String, String, String, String)>,
@@ -60,6 +61,7 @@ impl DeductiveDatabase {
             eqratio_facts: Vec::new(),
             aconst_facts: Vec::new(),
 
+            derived_point_coords: Vec::new(),
             derived_col: Vec::new(),
             derived_para: Vec::new(),
             derived_perp: Vec::new(),
@@ -77,11 +79,11 @@ impl DeductiveDatabase {
         }
     }
 
-    fn add_point(&mut self, name: String, x: f64, y: f64) {
-        if self.points.iter().any(|(n, _, _)| n == &name) {
+    fn add_point(&mut self, x: i64, y: i64, name: String) {
+        if self.points.iter().any(|(_, _, n)| n == &name) {
             return;
         }
-        self.points.push((name.clone(), x, y));
+        self.points.push((x, y, name.clone()));
     }
 
     fn add_col(&mut self, a: String, b: String, c: String) {
@@ -142,7 +144,11 @@ impl DeductiveDatabase {
 
     fn run(&mut self) {
         let points: Vec<String> = self.points.iter()
-            .map(|(name, _, _)| name.clone())
+            .map(|(_, _, name)| name.clone())
+            .collect();
+
+        let point_coords: Vec<(String, i64, i64)> = self.points.iter()
+            .map(|(x, y, name)| (name.clone(), *x, *y))
             .collect();
 
         let col_facts = self.col_facts.clone();
@@ -164,6 +170,7 @@ impl DeductiveDatabase {
             struct AscentProgram;
 
             relation point(String);
+            relation point_coords(String, i64, i64);
             relation col(String, String, String);
             relation para(String, String, String, String);
             relation perp(String, String, String, String);
@@ -333,6 +340,7 @@ impl DeductiveDatabase {
 
         // Initialize input relations
         prog.point = points.into_iter().map(|x| (x,)).collect();
+        prog.point_coords = point_coords;
         prog.col = col_facts;
         prog.para = para_facts;
         prog.perp = perp_facts;
@@ -351,6 +359,7 @@ impl DeductiveDatabase {
         prog.run();
 
         // Extract derived results
+        self.derived_point_coords = prog.point_coords;
         self.derived_col = prog.col;
         self.derived_para = prog.para;
         self.derived_perp = prog.perp;
@@ -368,8 +377,12 @@ impl DeductiveDatabase {
     }
 
     // Output methods
-    fn get_points(&self) -> Vec<(String, f64, f64)> {
+    fn get_points(&self) -> Vec<(i64, i64, String)> {
         self.points.clone()
+    }
+
+    fn get_point_coords(&self) -> Vec<(String, i64, i64)> {
+        self.derived_point_coords.clone()
     }
 
     fn get_col(&self) -> Vec<(String, String, String)> {
