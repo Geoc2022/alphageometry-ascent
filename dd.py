@@ -4,7 +4,6 @@ from python.ascent_py import DeductiveDatabase
 from relations import Point, Predicate
 import relations
 import inspect
-from typing import Set, Dict, Callable, Tuple
 
 
 def _build_predicate_registry():
@@ -13,23 +12,6 @@ def _build_predicate_registry():
     Returns a dict mapping lowercase predicate names to (class, arity, db_method) tuples.
     """
     registry = {}
-
-    # Mapping of class names to DeductiveDatabase method names
-    db_method_map = {
-        "col": "collinear",
-        "para": "parallel",
-        "perp": "perpendicular",
-        "cong": "congruent",
-        "eqangle": "equal_angle",
-        "cyclic": "cyclic",
-        "sameclock": "sameclock",
-        "midp": "midpoint",
-        "contri1": "contri1",
-        "contri2": "contri2",
-        "simtri1": "simtri1",
-        "simtri2": "simtri2",
-        "eqratio": "equal_ratio",
-    }
 
     # Get all classes from the relations module
     for name, obj in inspect.getmembers(relations, inspect.isclass):
@@ -41,12 +23,7 @@ def _build_predicate_registry():
             params = [p for p in sig.parameters.values() if p.name != "self"]
             arity = len(params)
 
-            # Register using lowercase class name
-            key = name.lower()
-            db_method = db_method_map.get(key)
-
-            if db_method:  # Only register if we have a corresponding DB method
-                registry[key] = (obj, arity, db_method)
+            registry[name.lower()] = (obj, arity, name.lower())
 
     return registry
 
@@ -60,7 +37,7 @@ class DD:
     Maintains correspondence between Point objects and their string names.
     """
 
-    def __init__(self, points: Set[Point], initial_predicates: Set[Predicate]):
+    def __init__(self, points: set[Point], initial_predicates: set[Predicate]):
         """
         Initialize the deductive database with points and initial predicates.
 
@@ -70,22 +47,18 @@ class DD:
         """
         self.db = DeductiveDatabase()
 
-        # Maintain bidirectional mapping between Point objects and names
-        self.point_by_name: Dict[str, Point] = {}
-        self.name_by_point: Dict[Point, str] = {}
+        self.point_by_name: dict[str, Point] = {}
+        self.name_by_point: dict[Point, str] = {}
 
-        # Initialize points
         for point in points:
             self._add_point(point)
 
-        # Add initial predicates
         for predicate in initial_predicates:
             self.add_predicate(predicate)
 
-        # Run initial deduction
         self.db.run()
 
-        self._extracted_predicates: Set[Predicate] = set()
+        self._extracted_predicates: set[Predicate] = set()
 
     def _add_point(self, point: Point):
         """Add a point to the database and maintain mappings."""
@@ -127,7 +100,7 @@ class DD:
         """Run the datalog deduction engine."""
         self.db.run()
 
-    def get_new_deductions(self) -> Set[Predicate]:
+    def get_new_deductions(self) -> set[Predicate]:
         """
         Extract newly deduced predicates from the database.
         Only returns predicates that haven't been extracted before.
@@ -152,7 +125,7 @@ class DD:
         return new_predicates
 
     def _extract_predicate(
-        self, pred_class: type, point_names: Tuple[str, ...]
+        self, pred_class: type, point_names: tuple[str, ...]
     ) -> Predicate:
         """
         Extract a predicate from database results.
@@ -168,7 +141,7 @@ class DD:
         return pred_class(*points)
 
 
-def deduce_from_datalog(problem) -> Set[Predicate]:
+def deduce_from_datalog(problem) -> set[Predicate]:
     """
     Run the datalog deductive database and return all newly deduced predicates.
 

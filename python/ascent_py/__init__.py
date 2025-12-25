@@ -48,25 +48,25 @@ class DeductiveDatabase:
                 # print("Adding sameclock for", names)
                 self.add_sameclock(*names)
 
-    def add_collinear(self, a: str, b: str, c: str):
+    def add_col(self, a: str, b: str, c: str):
         """Add collinearity fact: points a, b, c are collinear"""
-        self._prog.add_collinear(a, b, c)
+        self._prog.add_col(a, b, c)
 
-    def add_parallel(self, a: str, b: str, c: str, d: str):
+    def add_para(self, a: str, b: str, c: str, d: str):
         """Add parallel fact: line AB is parallel to line CD"""
-        self._prog.add_parallel(a, b, c, d)
+        self._prog.add_para(a, b, c, d)
 
-    def add_perpendicular(self, a: str, b: str, c: str, d: str):
+    def add_perp(self, a: str, b: str, c: str, d: str):
         """Add perpendicular fact: line AB is perpendicular to line CD"""
-        self._prog.add_perpendicular(a, b, c, d)
+        self._prog.add_perp(a, b, c, d)
 
-    def add_congruent(self, a: str, b: str, c: str, d: str):
+    def add_cong(self, a: str, b: str, c: str, d: str):
         """Add congruence fact: segment AB is congruent to segment CD"""
-        self._prog.add_congruent(a, b, c, d)
+        self._prog.add_cong(a, b, c, d)
 
-    def add_equal_angle(self, a: str, b: str, c: str, d: str, e: str, f: str):
+    def add_eqangle(self, a: str, b: str, c: str, d: str, e: str, f: str):
         """Add equal angle fact: angle ABC equals angle DEF"""
-        self._prog.add_equal_angle(a, b, c, d, e, f)
+        self._prog.add_eqangle(a, b, c, d, e, f)
 
     def add_cyclic(self, a: str, b: str, c: str, d: str):
         """Add cyclic fact: points A, B, C, D lie on the same circle"""
@@ -76,9 +76,9 @@ class DeductiveDatabase:
         """Add sameclock fact: points A, B, C, D, E, F have the same orientation"""
         self._prog.add_sameclock(a, b, c, d, e, f)
 
-    def add_midpoint(self, m: str, a: str, b: str):
+    def add_midp(self, m: str, a: str, b: str):
         """Add midpoint fact: M is the midpoint of segment AB"""
-        self._prog.add_midpoint(m, a, b)
+        self._prog.add_midp(m, a, b)
 
     def add_contri1(self, a: str, b: str, c: str, d: str, e: str, f: str):
         """Add congruent triangles fact (same orientation): triangle ABC ≅ triangle DEF"""
@@ -96,36 +96,40 @@ class DeductiveDatabase:
         """Add similar triangles fact (opposite orientation): triangle ABC ~ triangle DEF"""
         self._prog.add_simtri2(a, b, c, d, e, f)
 
-    def add_equal_ratio(
+    def add_eqratio(
         self, a: str, b: str, c: str, d: str, e: str, f: str, g: str, h: str
     ):
         """Add equal ratios fact: (AB/CD) = (EF/GH)"""
-        self._prog.add_equal_ratio(a, b, c, d, e, f, g, h)
+        self._prog.add_eqratio(a, b, c, d, e, f, g, h)
+
+    def add_aconst(self, a: str, b: str, c: str, m: int, n: int):
+        """Add constant angle fact: ∠ABC = mπ/n"""
+        self._prog.add_aconst(a, b, c, m, n)
 
     def run(self):
         """Execute the Datalog deduction rules"""
         self._prog.run()
 
     # Output methods
-    def get_collinear(self) -> List[Tuple[str, str, str]]:
+    def get_col(self) -> List[Tuple[str, str, str]]:
         """Get all deduced collinear point sets"""
-        return self._prog.get_collinear()
+        return self._prog.get_col()
 
-    def get_parallel(self) -> List[Tuple[str, str, str, str]]:
+    def get_para(self) -> List[Tuple[str, str, str, str]]:
         """Get all deduced parallel relationships"""
-        return self._prog.get_parallel()
+        return self._prog.get_para()
 
-    def get_perpendicular(self) -> List[Tuple[str, str, str, str]]:
+    def get_perp(self) -> List[Tuple[str, str, str, str]]:
         """Get all deduced perpendicular relationships"""
-        return self._prog.get_perpendicular()
+        return self._prog.get_perp()
 
-    def get_congruent(self) -> List[Tuple[str, str, str, str]]:
+    def get_cong(self) -> List[Tuple[str, str, str, str]]:
         """Get all deduced congruent segments"""
-        return self._prog.get_congruent()
+        return self._prog.get_cong()
 
-    def get_equal_angle(self) -> List[Tuple[str, str, str, str, str, str]]:
+    def get_eqangle(self) -> List[Tuple[str, str, str, str, str, str]]:
         """Get all deduced equal angles"""
-        return self._prog.get_equal_angles()
+        return self._prog.get_eqangle()
 
     def get_cyclic(self) -> List[Tuple[str, str, str, str]]:
         """Get all deduced cyclic point sets"""
@@ -135,9 +139,9 @@ class DeductiveDatabase:
         """Get all deduced sameclock relationships"""
         return self._prog.get_sameclock()
 
-    def get_midpoint(self) -> List[Tuple[str, str, str]]:
+    def get_midp(self) -> List[Tuple[str, str, str]]:
         """Get all deduced midpoint relationships"""
-        return self._prog.get_midpoint()
+        return self._prog.get_midp()
 
     def get_contri1(self) -> List[Tuple[str, str, str, str, str, str]]:
         """Get all deduced congruent triangles (same orientation)"""
@@ -155,9 +159,13 @@ class DeductiveDatabase:
         """Get all deduced similar triangles (opposite orientation)"""
         return self._prog.get_simtri2()
 
-    def get_equal_ratio(self) -> List[Tuple[str, str, str, str, str, str, str, str]]:
+    def get_eqratio(self) -> List[Tuple[str, str, str, str, str, str, str, str]]:
         """Get all deduced equal ratios"""
-        return self._prog.get_equal_ratio()
+        return self._prog.get_eqratio()
+
+    def get_aconst(self) -> List[Tuple[str, str, str, int, int]]:
+        """Get all deduced constant angle relationships"""
+        return self._prog.get_aconst()
 
     def get_similar_triangles(self) -> List[Tuple[str, str, str, str, str, str]]:
         """Get all deduced similar triangles (both orientations combined)"""
@@ -168,9 +176,9 @@ class DeductiveDatabase:
         return self.get_contri1() + self.get_contri2()
 
     def __repr__(self):
-        parallels = len(self.get_parallel())
-        congruent = len(self.get_congruent())
-        angles = len(self.get_equal_angle())
+        parallels = len(self.get_para())
+        congruent = len(self.get_cong())
+        angles = len(self.get_eqangle())
         contri = len(self.get_contri1()) + len(self.get_contri2())
         simtri = len(self.get_simtri1()) + len(self.get_simtri2())
         return (

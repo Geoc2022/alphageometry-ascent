@@ -7,33 +7,36 @@ use ascent::ascent;
 struct DeductiveDatabase {
     // Input facts
     points: Vec<(String, f64, f64)>,
-    collinear_facts: Vec<(String, String, String)>,
-    parallel_facts: Vec<(String, String, String, String)>,
-    perpendicular_facts: Vec<(String, String, String, String)>,
-    congruent_facts: Vec<(String, String, String, String)>,
-    equal_angle_facts: Vec<(String, String, String, String, String, String)>,
+    col_facts: Vec<(String, String, String)>,
+    para_facts: Vec<(String, String, String, String)>,
+    perp_facts: Vec<(String, String, String, String)>,
+    cong_facts: Vec<(String, String, String, String)>,
+    eqangle_facts: Vec<(String, String, String, String, String, String)>,
     cyclic_facts: Vec<(String, String, String, String)>,
     sameclock_facts: Vec<(String, String, String, String, String, String)>,
-    midpoint_facts: Vec<(String, String, String)>,
+    midp_facts: Vec<(String, String, String)>,
     contri1_facts: Vec<(String, String, String, String, String, String)>,
     contri2_facts: Vec<(String, String, String, String, String, String)>,
     simtri1_facts: Vec<(String, String, String, String, String, String)>,
     simtri2_facts: Vec<(String, String, String, String, String, String)>,
+    eqratio_facts: Vec<(String, String, String, String, String, String, String, String)>,
+    aconst_facts: Vec<(String, String, String, i32, i32)>,
 
     // Derived results
-    derived_collinear: Vec<(String, String, String)>,
-    derived_parallel: Vec<(String, String, String, String)>,
-    derived_perpendicular: Vec<(String, String, String, String)>,
-    derived_congruent: Vec<(String, String, String, String)>,
-    derived_equal_angles: Vec<(String, String, String, String, String, String)>,
+    derived_col: Vec<(String, String, String)>,
+    derived_para: Vec<(String, String, String, String)>,
+    derived_perp: Vec<(String, String, String, String)>,
+    derived_cong: Vec<(String, String, String, String)>,
+    derived_eqangle: Vec<(String, String, String, String, String, String)>,
     derived_cyclic: Vec<(String, String, String, String)>,
     derived_sameclock: Vec<(String, String, String, String, String, String)>,
-    derived_midpoint: Vec<(String, String, String)>,
+    derived_midp: Vec<(String, String, String)>,
     derived_contri1: Vec<(String, String, String, String, String, String)>,
     derived_contri2: Vec<(String, String, String, String, String, String)>,
     derived_simtri1: Vec<(String, String, String, String, String, String)>,
     derived_simtri2: Vec<(String, String, String, String, String, String)>,
-    derived_equal_ratios: Vec<(String, String, String, String, String, String, String, String)>,
+    derived_eqratio: Vec<(String, String, String, String, String, String, String, String)>,
+    derived_aconst: Vec<(String, String, String, i32, i32)>,
 }
 
 #[pymethods]
@@ -42,32 +45,35 @@ impl DeductiveDatabase {
     fn new() -> Self {
         DeductiveDatabase {
             points: Vec::new(),
-            collinear_facts: Vec::new(),
-            parallel_facts: Vec::new(),
-            perpendicular_facts: Vec::new(),
-            congruent_facts: Vec::new(),
-            equal_angle_facts: Vec::new(),
+            col_facts: Vec::new(),
+            para_facts: Vec::new(),
+            perp_facts: Vec::new(),
+            cong_facts: Vec::new(),
+            eqangle_facts: Vec::new(),
             cyclic_facts: Vec::new(),
             sameclock_facts: Vec::new(),
-            midpoint_facts: Vec::new(),
+            midp_facts: Vec::new(),
             contri1_facts: Vec::new(),
             contri2_facts: Vec::new(),
             simtri1_facts: Vec::new(),
             simtri2_facts: Vec::new(),
+            eqratio_facts: Vec::new(),
+            aconst_facts: Vec::new(),
 
-            derived_collinear: Vec::new(),
-            derived_parallel: Vec::new(),
-            derived_perpendicular: Vec::new(),
-            derived_congruent: Vec::new(),
-            derived_equal_angles: Vec::new(),
+            derived_col: Vec::new(),
+            derived_para: Vec::new(),
+            derived_perp: Vec::new(),
+            derived_cong: Vec::new(),
+            derived_eqangle: Vec::new(),
             derived_cyclic: Vec::new(),
             derived_sameclock: Vec::new(),
-            derived_midpoint: Vec::new(),
+            derived_midp: Vec::new(),
             derived_contri1: Vec::new(),
             derived_contri2: Vec::new(),
             derived_simtri1: Vec::new(),
             derived_simtri2: Vec::new(),
-            derived_equal_ratios: Vec::new(),
+            derived_eqratio: Vec::new(),
+            derived_aconst: Vec::new(),
         }
     }
 
@@ -78,24 +84,24 @@ impl DeductiveDatabase {
         self.points.push((name.clone(), x, y));
     }
 
-    fn add_collinear(&mut self, a: String, b: String, c: String) {
-        self.collinear_facts.push((a, b, c));
+    fn add_col(&mut self, a: String, b: String, c: String) {
+        self.col_facts.push((a, b, c));
     }
 
-    fn add_parallel(&mut self, a: String, b: String, c: String, d: String) {
-        self.parallel_facts.push((a, b, c, d));
+    fn add_para(&mut self, a: String, b: String, c: String, d: String) {
+        self.para_facts.push((a, b, c, d));
     }
 
-    fn add_perpendicular(&mut self, a: String, b: String, c: String, d: String) {
-        self.perpendicular_facts.push((a, b, c, d));
+    fn add_perp(&mut self, a: String, b: String, c: String, d: String) {
+        self.perp_facts.push((a, b, c, d));
     }
 
-    fn add_congruent(&mut self, a: String, b: String, c: String, d: String) {
-        self.congruent_facts.push((a, b, c, d));
+    fn add_cong(&mut self, a: String, b: String, c: String, d: String) {
+        self.cong_facts.push((a, b, c, d));
     }
 
-    fn add_equal_angle(&mut self, a: String, b: String, c: String, d: String, e: String, f: String) {
-        self.equal_angle_facts.push((a, b, c, d, e, f));
+    fn add_eqangle(&mut self, a: String, b: String, c: String, d: String, e: String, f: String) {
+        self.eqangle_facts.push((a, b, c, d, e, f));
     }
 
     fn add_cyclic(&mut self, a: String, b: String, c: String, d: String) {
@@ -106,8 +112,8 @@ impl DeductiveDatabase {
         self.sameclock_facts.push((a, b, c, d, e, f));
     }
 
-    fn add_midpoint(&mut self, a: String, b: String, c: String) {
-        self.midpoint_facts.push((a, b, c));
+    fn add_midp(&mut self, a: String, b: String, c: String) {
+        self.midp_facts.push((a, b, c));
     }
 
     fn add_contri1(&mut self, a: String, b: String, c: String, d: String, e: String, f: String) {
@@ -126,8 +132,12 @@ impl DeductiveDatabase {
         self.simtri2_facts.push((a, b, c, d, e, f));
     }
 
-    fn add_equal_ratio(&mut self, a: String, b: String, c: String, d: String, e: String, f: String, g: String, h: String) {
-        self.derived_equal_ratios.push((a, b, c, d, e, f, g, h));
+    fn add_eqratio(&mut self, a: String, b: String, c: String, d: String, e: String, f: String, g: String, h: String) {
+        self.eqratio_facts.push((a, b, c, d, e, f, g, h));
+    }
+
+    fn add_aconst(&mut self, a: String, b: String, c: String, m: i32, n: i32) {
+        self.aconst_facts.push((a, b, c, m, n));
     }
 
     fn run(&mut self) {
@@ -135,58 +145,61 @@ impl DeductiveDatabase {
             .map(|(name, _, _)| name.clone())
             .collect();
 
-        let col_facts = self.collinear_facts.clone();
-        let para_facts = self.parallel_facts.clone();
-        let perp_facts = self.perpendicular_facts.clone();
-        let cong_facts = self.congruent_facts.clone();
-        let eqangle_facts = self.equal_angle_facts.clone();
+        let col_facts = self.col_facts.clone();
+        let para_facts = self.para_facts.clone();
+        let perp_facts = self.perp_facts.clone();
+        let cong_facts = self.cong_facts.clone();
+        let eqangle_facts = self.eqangle_facts.clone();
         let cyclic_facts = self.cyclic_facts.clone();
         let sameclock_facts = self.sameclock_facts.clone();
-        let midp_facts = self.midpoint_facts.clone();
+        let midp_facts = self.midp_facts.clone();
         let contri1_facts = self.contri1_facts.clone();
         let contri2_facts = self.contri2_facts.clone();
         let simtri1_facts = self.simtri1_facts.clone();
         let simtri2_facts = self.simtri2_facts.clone();
+        let eqratio_facts = self.eqratio_facts.clone();
+        let aconst_facts = self.aconst_facts.clone();
 
         ascent! {
             struct AscentProgram;
 
             relation point(String);
-            relation collinear(String, String, String);
-            relation parallel(String, String, String, String);
-            relation perpendicular(String, String, String, String);
-            relation congruent(String, String, String, String);
-            relation equal_angle(String, String, String, String, String, String);
+            relation col(String, String, String);
+            relation para(String, String, String, String);
+            relation perp(String, String, String, String);
+            relation cong(String, String, String, String);
+            relation eqangle(String, String, String, String, String, String);
             relation cyclic(String, String, String, String);
             relation sameclock(String, String, String, String, String, String);
-            relation eq_ratio(String, String, String, String, String, String, String, String);
-            relation midpoint(String, String, String);
+            relation eqratio(String, String, String, String, String, String, String, String);
+            relation midp(String, String, String);
             relation contri1(String, String, String, String, String, String);
             relation contri2(String, String, String, String, String, String);
             relation simtri1(String, String, String, String, String, String);
             relation simtri2(String, String, String, String, String, String);
+            relation aconst(String, String, String, i32, i32);
 
             // ----------------------------------------------------------------
             // Relation Properties (Symmetries)
             // ----------------------------------------------------------------
 
-            collinear(c, b, a) <-- collinear(a, b, c);
-            collinear(a, c, b) <-- collinear(a, b, c);
+            col(c, b, a) <-- col(a, b, c);
+            col(a, c, b) <-- col(a, b, c);
 
-            parallel(c, d, a, b) <-- parallel(a, b, c, d);
-            parallel(b, a, c, d) <-- parallel(a, b, c, d);
-            parallel(a, b, d, c) <-- parallel(a, b, c, d);
+            para(c, d, a, b) <-- para(a, b, c, d);
+            para(b, a, c, d) <-- para(a, b, c, d);
+            para(a, b, d, c) <-- para(a, b, c, d);
 
-            perpendicular(c, d, a, b) <-- perpendicular(a, b, c, d);
-            perpendicular(b, a, c, d) <-- perpendicular(a, b, c, d);
-            perpendicular(a, b, d, c) <-- perpendicular(a, b, c, d);
+            perp(c, d, a, b) <-- perp(a, b, c, d);
+            perp(b, a, c, d) <-- perp(a, b, c, d);
+            perp(a, b, d, c) <-- perp(a, b, c, d);
 
-            congruent(c, d, a, b) <-- congruent(a, b, c, d);
-            congruent(b, a, c, d) <-- congruent(a, b, c, d);
-            congruent(a, b, d, c) <-- congruent(a, b, c, d);
+            cong(c, d, a, b) <-- cong(a, b, c, d);
+            cong(b, a, c, d) <-- cong(a, b, c, d);
+            cong(a, b, d, c) <-- cong(a, b, c, d);
 
-            equal_angle(d, e, f, a, b, c) <-- equal_angle(a, b, c, d, e, f);
-            equal_angle(c, b, a, f, e, d) <-- equal_angle(a, b, c, d, e, f);
+            eqangle(d, e, f, a, b, c) <-- eqangle(a, b, c, d, e, f);
+            eqangle(c, b, a, f, e, d) <-- eqangle(a, b, c, d, e, f);
 
             cyclic(b, c, d, a) <-- cyclic(a, b, c, d);
             cyclic(a, c, b, d) <-- cyclic(a, b, c, d);
@@ -195,24 +208,24 @@ impl DeductiveDatabase {
             sameclock(a, b, c, f, d, e) <-- sameclock(a, b, c, d, e, f);
             sameclock(c, b, a, f, e, d) <-- sameclock(a, b, c, d, e, f);
 
-            eq_ratio(e, f, g, h, a, b, c, d) <-- eq_ratio(a, b, c, d, e, f, g, h);
-            eq_ratio(c, d, a, b, g, h, e, f) <-- eq_ratio(a, b, c, d, e, f, g, h);
-            eq_ratio(a, b, e, f, c, d, g, h) <-- eq_ratio(a, b, c, d, e, f, g, h);
+            eqratio(e, f, g, h, a, b, c, d) <-- eqratio(a, b, c, d, e, f, g, h);
+            eqratio(c, d, a, b, g, h, e, f) <-- eqratio(a, b, c, d, e, f, g, h);
+            eqratio(a, b, e, f, c, d, g, h) <-- eqratio(a, b, c, d, e, f, g, h);
 
             // ----------------------------------------------------------------
             // Trivial Statements
             // ----------------------------------------------------------------
 
-            congruent(a, b, a, b) <--
+            cong(a, b, a, b) <--
                 point(a), point(b),
                 if a != b;
 
-            parallel(a, b, a, b) <--
+            para(a, b, a, b) <--
                 point(a), point(b),
                 if a != b;
 
-            equal_angle(a, b, c, a, b, c) <--
-                point(a), point(b), point(c), !collinear(a, b, c),
+            eqangle(a, b, c, a, b, c) <--
+                point(a), point(b), point(c), !col(a, b, c),
                 if a != b && a != c && b != c;
 
             // ----------------------------------------------------------------
@@ -220,81 +233,81 @@ impl DeductiveDatabase {
             // ----------------------------------------------------------------
 
             // AA Similarity
-            simtri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(b, c, a, e, f, d), sameclock(a, b, c, d, e, f), 
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            simtri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), eqangle(b, c, a, e, f, d), sameclock(a, b, c, d, e, f), 
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            simtri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), equal_angle(b, c, a, d, f, e), sameclock(a, b, c, f, e, d), 
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            simtri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), eqangle(b, c, a, d, f, e), sameclock(a, b, c, f, e, d), 
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
 
             // ASA Congruence
-            contri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(c, b, a, f, e, d), congruent(a, b, d, e), sameclock(a, b, c, d, e, f),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), eqangle(c, b, a, f, e, d), cong(a, b, d, e), sameclock(a, b, c, d, e, f),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), equal_angle(c, b, a, d, e, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), eqangle(c, b, a, d, e, f), cong(a, b, d, e), sameclock(a, b, c, f, e, d),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
 
             // SAS Congruence
-            contri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, d, e, f),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), cong(a, c, d, f), cong(a, b, d, e), sameclock(a, b, c, d, e, f),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), cong(a, c, d, f), cong(a, b, d, e), sameclock(a, b, c, f, e, d),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
 
             // SSS Congruence
-            contri1(a, b, c, d, e, f) <-- congruent(a, c, d, f), congruent(a, b, d, e), congruent(c, b, f, e), sameclock(a, b, c, d, e, f),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri1(a, b, c, d, e, f) <-- cong(a, c, d, f), cong(a, b, d, e), cong(c, b, f, e), sameclock(a, b, c, d, e, f),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            contri2(a, b, c, d, e, f) <-- congruent(a, c, d, f), congruent(a, b, d, e), congruent(c, b, f, e), sameclock(a, b, c, f, e, d),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri2(a, b, c, d, e, f) <-- cong(a, c, d, f), cong(a, b, d, e), cong(c, b, f, e), sameclock(a, b, c, f, e, d),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
 
             // Right SSA
-            contri1(a, b, c, d, e, f) <-- perpendicular(a, b, a_prime, c), perpendicular(d, e, d_prime, f), congruent(a, b, d, e), congruent(b, c, e, f), sameclock(a, b, c, d, e, f),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri1(a, b, c, d, e, f) <-- perp(a, b, a_prime, c), perp(d, e, d_prime, f), cong(a, b, d, e), cong(b, c, e, f), sameclock(a, b, c, d, e, f),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a == a_prime && d == d_prime &&
                    a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            contri2(a, b, c, d, e, f) <-- perpendicular(a, b, a_prime, c), perpendicular(d, e, d_prime, f), congruent(a, b, d, e), congruent(b, c, e, f), sameclock(a, b, c, f, e, d),
-                !collinear(a, b, c),
-                !collinear(d, e, f),
+            contri2(a, b, c, d, e, f) <-- perp(a, b, a_prime, c), perp(d, e, d_prime, f), cong(a, b, d, e), cong(b, c, e, f), sameclock(a, b, c, f, e, d),
+                !col(a, b, c),
+                !col(d, e, f),
                 if a == a_prime && d == d_prime &&
                    a != b && a != c &&
                    b != c &&
@@ -302,14 +315,14 @@ impl DeductiveDatabase {
                    e != f;
 
             // Inscribed Angle Theorem
-            equal_angle(a, b, c, c, b, d) <-- congruent(o, a, o_prime, b), congruent(o, c, o_prime, b), congruent(o, c, o_prime, a), perpendicular(o, b, b_prime, d), equal_angle(a, o, c, c_prime, o, b),
+            eqangle(a, b, c, c, b, d) <-- cong(o, a, o_prime, b), cong(o, c, o_prime, b), cong(o, c, o_prime, a), perp(o, b, b_prime, d), eqangle(a, o, c, c_prime, o, b),
                 if o == o_prime && b == b_prime && c == c_prime &&
                    a != b && a != c && a != d &&
                    b != c && b != d &&
                    c != d;
 
             // Diameter Right Angle
-            perpendicular(b, r, r, d) <-- cyclic(b, r, y, d), congruent(b, o, r, o_prime), congruent(r, o, d, o_prime), collinear(b, o, d)
+            perp(b, r, r, d) <-- cyclic(b, r, y, d), cong(b, o, r, o_prime), cong(r, o, d, o_prime), col(b, o, d)
                 if o == o_prime &&
                    b != r && b != y && b != d &&
                    r != y && r != d &&
@@ -320,35 +333,38 @@ impl DeductiveDatabase {
 
         // Initialize input relations
         prog.point = points.into_iter().map(|x| (x,)).collect();
-        prog.collinear = col_facts;
-        prog.parallel = para_facts;
-        prog.perpendicular = perp_facts;
-        prog.congruent = cong_facts;
-        prog.equal_angle = eqangle_facts;
+        prog.col = col_facts;
+        prog.para = para_facts;
+        prog.perp = perp_facts;
+        prog.cong = cong_facts;
+        prog.eqangle = eqangle_facts;
         prog.cyclic = cyclic_facts;
         prog.sameclock = sameclock_facts;
-        prog.midpoint = midp_facts;
+        prog.midp = midp_facts;
         prog.contri1 = contri1_facts;
         prog.contri2 = contri2_facts;
         prog.simtri1 = simtri1_facts;
         prog.simtri2 = simtri2_facts;
+        prog.eqratio = eqratio_facts;
+        prog.aconst = aconst_facts;
 
         prog.run();
 
         // Extract derived results
-        self.derived_collinear = prog.collinear;
-        self.derived_parallel = prog.parallel;
-        self.derived_perpendicular = prog.perpendicular;
-        self.derived_congruent = prog.congruent;
-        self.derived_equal_angles = prog.equal_angle;
+        self.derived_col = prog.col;
+        self.derived_para = prog.para;
+        self.derived_perp = prog.perp;
+        self.derived_cong = prog.cong;
+        self.derived_eqangle = prog.eqangle;
         self.derived_cyclic = prog.cyclic;
         self.derived_sameclock = prog.sameclock;
-        self.derived_midpoint = prog.midpoint;
+        self.derived_midp = prog.midp;
         self.derived_contri1 = prog.contri1;
         self.derived_contri2 = prog.contri2;
         self.derived_simtri1 = prog.simtri1;
         self.derived_simtri2 = prog.simtri2;
-        self.derived_equal_ratios = prog.eq_ratio;
+        self.derived_eqratio = prog.eqratio;
+        self.derived_aconst = prog.aconst;
     }
 
     // Output methods
@@ -356,24 +372,24 @@ impl DeductiveDatabase {
         self.points.clone()
     }
 
-    fn get_collinear(&self) -> Vec<(String, String, String)> {
-        self.derived_collinear.clone()
+    fn get_col(&self) -> Vec<(String, String, String)> {
+        self.derived_col.clone()
     }
 
-    fn get_parallel(&self) -> Vec<(String, String, String, String)> {
-        self.derived_parallel.clone()
+    fn get_para(&self) -> Vec<(String, String, String, String)> {
+        self.derived_para.clone()
     }
 
-    fn get_perpendicular(&self) -> Vec<(String, String, String, String)> {
-        self.derived_perpendicular.clone()
+    fn get_perp(&self) -> Vec<(String, String, String, String)> {
+        self.derived_perp.clone()
     }
 
-    fn get_congruent(&self) -> Vec<(String, String, String, String)> {
-        self.derived_congruent.clone()
+    fn get_cong(&self) -> Vec<(String, String, String, String)> {
+        self.derived_cong.clone()
     }
 
-    fn get_equal_angles(&self) -> Vec<(String, String, String, String, String, String)> {
-        self.derived_equal_angles.clone()
+    fn get_eqangle(&self) -> Vec<(String, String, String, String, String, String)> {
+        self.derived_eqangle.clone()
     }
 
     fn get_cyclic(&self) -> Vec<(String, String, String, String)> {
@@ -384,8 +400,8 @@ impl DeductiveDatabase {
         self.derived_sameclock.clone()
     }
 
-    fn get_midpoint(&self) -> Vec<(String, String, String)> {
-        self.derived_midpoint.clone()
+    fn get_midp(&self) -> Vec<(String, String, String)> {
+        self.derived_midp.clone()
     }
 
     fn get_contri1(&self) -> Vec<(String, String, String, String, String, String)> {
@@ -404,8 +420,12 @@ impl DeductiveDatabase {
         self.derived_simtri2.clone()
     }
 
-    fn get_equal_ratio(&self) -> Vec<(String, String, String, String, String, String, String, String)> {
-        self.derived_equal_ratios.clone()
+    fn get_eqratio(&self) -> Vec<(String, String, String, String, String, String, String, String)> {
+        self.derived_eqratio.clone()
+    }
+
+    fn get_aconst(&self) -> Vec<(String, String, String, i32, i32)> {
+        self.derived_aconst.clone()
     }
 }
 

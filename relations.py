@@ -616,14 +616,14 @@ class Aconst(Predicate):
 
 ## CUSTOM PREDICATES (not on the spreadsheet) ##
 # intersect A B C D E
-class Inter(Predicate):
-    """A is the intersection of line BC and line DE"""
-
-    data: frozenset[Predicate]
-
-    @str_init_args
-    def __init__(self, a: Point, b: Point, c: Point, d: Point, e: Point):
-        self.data = frozenset([Col(a, b, c), Col(a, d, e)])
-
-    def to_angle_rows(self) -> list[AngleRow]:
-        return collect_rows(self.data, Col, lambda p: p.to_angle_rows())
+# class Inter(Predicate):
+#     """A is the intersection of line BC and line DE"""
+#
+#     data: frozenset[Predicate]
+#
+#     @str_init_args
+#     def __init__(self, a: Point, b: Point, c: Point, d: Point, e: Point):
+#         self.data = frozenset([Col(a, b, c), Col(a, d, e)])
+#
+#     def to_angle_rows(self) -> list[AngleRow]:
+#         return collect_rows(self.data, Col, lambda p: p.to_angle_rows())
