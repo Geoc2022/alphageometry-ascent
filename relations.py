@@ -360,6 +360,9 @@ class Eqangle(Predicate):
             if len(set(angles[0])) != 3:
                 return False
             return True
+        for angle in self.data:
+            if isclose(abs(pi - (angle_between(*angle) % pi)) % pi, 0):
+                return False
         a1, b1, c1 = angles[0]
         a2, b2, c2 = angles[1]
         if len({a1, b1, c1}) != 3:

@@ -1,5 +1,15 @@
-from relations import Predicate, Point, Cong, Para, Perp, Eqangle, Deduction
+from relations import (
+    Predicate,
+    Point,
+    Cong,
+    Para,
+    Perp,
+    Eqangle,
+    Sameclock,
+    angle_between,
+)
 import itertools
+from math import isclose, pi
 from dd import DD
 from ar import AR
 
@@ -43,14 +53,23 @@ class Problem:
     def flush_deductions(self):
         """Flush the deductions buffer and add predicates to the problem and DD."""
         for predicate in self.deductions_buffer:
+            interesting = predicate not in self.predicates
             # Add to AR
             self.ar.add_predicate(predicate)
 
             # Add to DD
             self.dd.add_predicate(predicate)
+            for subpredicate in predicate.to_sub_data():
+                self.dd.add_predicate(subpredicate.predicate)
 
             # Add to problem predicates (no parent tracking)
             self._add_predicate(predicate, set())
+
+            interesting &= len(predicate.data) != 1
+            interesting &= not (isinstance(predicate, Sameclock))
+            if interesting:
+                pass
+                # print(predicate)
 
         self.deductions_buffer.clear()
 
@@ -100,6 +119,11 @@ class Problem:
         self.predicates[predicate] = parent_predicates
         for sub_deduction in predicate.to_sub_data():
             self.predicates[sub_deduction.predicate] = sub_deduction.parent_predicates
+            if sub_deduction.predicate in self.goals:
+                print("\033[92mFound: \033[0m", sub_deduction.predicate)
+
+        if predicate in self.goals:
+            print("\033[92mFound: \033[0m", predicate)
 
     def is_solved(self) -> bool:
         # We have solved the problem if all goals are in self.predicates
@@ -110,52 +134,95 @@ class Problem:
         Scans through all predicate types with all point combinations.
         """
 
-        predicates_by_arity = {
-            4: [Cong, Para, Perp],  # Para, Perp
-            6: [Eqangle],
-            # 8: [Eqratio],
-        }
+        def check_possible(predicate: Predicate):
+            if predicate in self.impossible_relations:
+                return False
+            if predicate in self.possible_relations:
+                return True
+            else:
+                if predicate.is_valid():
+                    self.possible_relations.add(predicate)
+                    return True
+                else:
+                    self.impossible_relations.add(predicate)
+                    return False
 
-        for arity, pred_classes in predicates_by_arity.items():
-            distinct_points = 2
-            if arity % 3 == 0:
-                distinct_points = 3
+        # Search Cong
+        for line1, line2 in itertools.product(
+            itertools.combinations(self.points, 2), repeat=2
+        ):
+            cong = Cong(*line1, *line2)
+            if check_possible(cong):
+                self.can_deduce(cong)
 
-            def canonical_block(block):
-                rotated = block[-1:] + block[:-1]
-                names_block = [x.name for x in block]
-                names_rotated = [x.name for x in rotated]
-                return tuple(block) if names_block <= names_rotated else tuple(rotated)
+        # Search Para
+        for line1, line2 in itertools.product(
+            itertools.combinations(self.points, 2), repeat=2
+        ):
+            para = Para(*line1, *line2)
+            if check_possible(para):
+                self.can_deduce(para)
 
-            def permissible_combos(items, n, m):
-                assert n % m == 0
-                k = n // m
-                base_blocks = set()
-                for block in itertools.product(items, repeat=m):
-                    names = [x.name for x in block]
-                    if len(set(names)) != m:
-                        continue
-                    canon = canonical_block(list(block))
-                    base_blocks.add(canon)
-                for chosen in itertools.product(base_blocks, repeat=k):
-                    flat = [x for block in chosen for x in block]
-                    yield flat
+        # Search Perp
+        for line1, line2 in itertools.product(
+            itertools.combinations(self.points, 2), repeat=2
+        ):
+            perp = Perp(*line1, *line2)
+            if check_possible(perp):
+                self.can_deduce(perp)
 
-            combos = permissible_combos(self.points, arity, distinct_points)
-            for pred_class in pred_classes:
-                for point_tuple in combos:
-                    pred = pred_class(*point_tuple)
-                    if pred in self.predicates:
-                        continue
-                    try:
-                        if is_degenerate(pred):
-                            continue
-                        ar_deductions = self.can_deduce(pred)
-                        parent = {}
-                        if ar_deductions and flag:
-                            self.add_deduction(Deduction(pred, parent))
-                    except Exception as e:
-                        pass
+        # Search Eqangle
+        for angle1, angle2 in itertools.product(
+            itertools.permutations(self.points, 3), repeat=2
+        ):
+            eqangle = Eqangle(*angle1, *angle2)
+            if is_degenerate(eqangle):
+                continue
+            if check_possible(eqangle):
+                self.can_deduce(eqangle)
+
+        # predicates_by_arity = {
+        #     4: [Cong, Para, Perp],  # Para, Perp
+        #     6: [Eqangle],
+        #     # 8: [Eqratio],
+        # }
+        #
+        # for arity, pred_classes in predicates_by_arity.items():
+        #     distinct_points = 2
+        #     if arity % 3 == 0:
+        #         distinct_points = 3
+        #
+        #     def canonical_block(block):
+        #         rotated = block[-1:] + block[:-1]
+        #         names_block = [x.name for x in block]
+        #         names_rotated = [x.name for x in rotated]
+        #         return tuple(block) if names_block <= names_rotated else tuple(rotated)
+        #
+        #     def permissible_combos(items, n, m):
+        #         assert n % m == 0
+        #         k = n // m
+        #         base_blocks = set()
+        #         for block in itertools.product(items, repeat=m):
+        #             names = [x.name for x in block]
+        #             if len(set(names)) != m:
+        #                 continue
+        #             canon = canonical_block(list(block))
+        #             base_blocks.add(canon)
+        #         for chosen in itertools.product(base_blocks, repeat=k):
+        #             flat = [x for block in chosen for x in block]
+        #             yield flat
+        #
+        #     combos = permissible_combos(self.points, arity, distinct_points)
+        #     for pred_class in pred_classes:
+        #         for point_tuple in combos:
+        #             pred = pred_class(*point_tuple)
+        #             if pred in self.predicates:
+        #                 continue
+        #             if is_degenerate(pred):
+        #                 continue
+        #             ar_deductions = self.can_deduce(pred)
+        #             if ar_deductions:
+        #                 self.add_deduction(pred)
 
     def __str__(self) -> str:
         """
@@ -375,11 +442,12 @@ def permissible_combos_optimized(items, n, m, pred_class):
 
 
 def is_degenerate(pred: Predicate) -> bool:
+    if isinstance(pred, Cong):
+        for seg in pred.data:
+            if len(seg) == 1:
+                return True
     if isinstance(pred, Eqangle):
-        if len(pred.data) == 2:
-            angles = list(pred.data)
-            if isclose(angle_between(*angles[0]) % math.pi, 0) or isclose(
-                angle_between(*angles[1]) % math.pi, 0
-            ):
+        for angle in pred.data:
+            if isclose(angle_between(*angle) % pi, 0):
                 return True
     return False

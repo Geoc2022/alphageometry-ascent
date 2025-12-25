@@ -207,8 +207,12 @@ impl DeductiveDatabase {
                 point(a), point(b),
                 if a != b;
 
+            parallel(a, b, a, b) <--
+                point(a), point(b),
+                if a != b;
+
             equal_angle(a, b, c, a, b, c) <--
-                point(a), point(b), point(c),
+                point(a), point(b), point(c), !collinear(a, b, c),
                 if a != b && a != c && b != c;
 
             // ----------------------------------------------------------------
@@ -216,12 +220,16 @@ impl DeductiveDatabase {
             // ----------------------------------------------------------------
 
             // AA Similarity
-            simtri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(b, c, a, e, f, d), sameclock(a, b, c, d, e, f),
+            simtri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(b, c, a, e, f, d), sameclock(a, b, c, d, e, f), 
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
-            simtri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), equal_angle(b, c, a, d, f, e), sameclock(a, b, c, f, e, d),
+            simtri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), equal_angle(b, c, a, d, f, e), sameclock(a, b, c, f, e, d), 
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
@@ -229,11 +237,15 @@ impl DeductiveDatabase {
 
             // ASA Congruence
             contri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), equal_angle(c, b, a, f, e, d), congruent(a, b, d, e), sameclock(a, b, c, d, e, f),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
             contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), equal_angle(c, b, a, d, e, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
@@ -241,11 +253,15 @@ impl DeductiveDatabase {
 
             // SAS Congruence
             contri1(a, b, c, d, e, f) <-- equal_angle(b, a, c, e, d, f), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, d, e, f),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
             contri2(a, b, c, d, e, f) <-- equal_angle(b, a, c, f, d, e), congruent(a, c, d, f), congruent(a, b, d, e), sameclock(a, b, c, f, e, d),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
@@ -253,15 +269,51 @@ impl DeductiveDatabase {
 
             // SSS Congruence
             contri1(a, b, c, d, e, f) <-- congruent(a, c, d, f), congruent(a, b, d, e), congruent(c, b, f, e), sameclock(a, b, c, d, e, f),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
             contri2(a, b, c, d, e, f) <-- congruent(a, c, d, f), congruent(a, b, d, e), congruent(c, b, f, e), sameclock(a, b, c, f, e, d),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
                 if a != b && a != c &&
                    b != c &&
                    d != e && d != f &&
                    e != f;
+
+            // Right SSA
+            contri1(a, b, c, d, e, f) <-- perpendicular(a, b, a_prime, c), perpendicular(d, e, d_prime, f), congruent(a, b, d, e), congruent(b, c, e, f), sameclock(a, b, c, d, e, f),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
+                if a == a_prime && d == d_prime &&
+                   a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+            contri2(a, b, c, d, e, f) <-- perpendicular(a, b, a_prime, c), perpendicular(d, e, d_prime, f), congruent(a, b, d, e), congruent(b, c, e, f), sameclock(a, b, c, f, e, d),
+                !collinear(a, b, c),
+                !collinear(d, e, f),
+                if a == a_prime && d == d_prime &&
+                   a != b && a != c &&
+                   b != c &&
+                   d != e && d != f &&
+                   e != f;
+
+            // Inscribed Angle Theorem
+            equal_angle(a, b, c, c, b, d) <-- congruent(o, a, o_prime, b), congruent(o, c, o_prime, b), congruent(o, c, o_prime, a), perpendicular(o, b, b_prime, d), equal_angle(a, o, c, c_prime, o, b),
+                if o == o_prime && b == b_prime && c == c_prime &&
+                   a != b && a != c && a != d &&
+                   b != c && b != d &&
+                   c != d;
+
+            // Diameter Right Angle
+            perpendicular(b, r, r, d) <-- cyclic(b, r, y, d), congruent(b, o, r, o_prime), congruent(r, o, d, o_prime), collinear(b, o, d)
+                if o == o_prime &&
+                   b != r && b != y && b != d &&
+                   r != y && r != d &&
+                   y != d;
         }
 
         let mut prog = AscentProgram::default();
