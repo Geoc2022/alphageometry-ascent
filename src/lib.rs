@@ -23,7 +23,6 @@ struct DeductiveDatabase {
     aconst_facts: Vec<(String, String, String, i32, i32)>,
 
     // Derived results
-    derived_point_coords: Vec<(String, i64, i64)>,
     derived_col: Vec<(String, String, String)>,
     derived_para: Vec<(String, String, String, String)>,
     derived_perp: Vec<(String, String, String, String)>,
@@ -61,7 +60,6 @@ impl DeductiveDatabase {
             eqratio_facts: Vec::new(),
             aconst_facts: Vec::new(),
 
-            derived_point_coords: Vec::new(),
             derived_col: Vec::new(),
             derived_para: Vec::new(),
             derived_perp: Vec::new(),
@@ -143,13 +141,7 @@ impl DeductiveDatabase {
     }
 
     fn run(&mut self) {
-        let points: Vec<String> = self.points.iter()
-            .map(|(_, _, name)| name.clone())
-            .collect();
-
-        let point_coords: Vec<(String, i64, i64)> = self.points.iter()
-            .map(|(x, y, name)| (name.clone(), *x, *y))
-            .collect();
+        let points = self.points.clone();
 
         let col_facts = self.col_facts.clone();
         let para_facts = self.para_facts.clone();
@@ -169,8 +161,7 @@ impl DeductiveDatabase {
         ascent! {
             struct AscentProgram;
 
-            relation point(String);
-            relation point_coords(String, i64, i64);
+            relation point(i64, i64, String);
             relation col(String, String, String);
             relation para(String, String, String, String);
             relation perp(String, String, String, String);
@@ -224,15 +215,15 @@ impl DeductiveDatabase {
             // ----------------------------------------------------------------
 
             cong(a, b, a, b) <--
-                point(a), point(b),
+                point(_, _, a), point(_, _, b),
                 if a != b;
 
             para(a, b, a, b) <--
-                point(a), point(b),
+                point(_, _, a), point(_, _, b),
                 if a != b;
 
             eqangle(a, b, c, a, b, c) <--
-                point(a), point(b), point(c), !col(a, b, c),
+                point(_, _, a), point(_, _, b), point(_, _, c), !col(a, b, c),
                 if a != b && a != c && b != c;
 
             // ----------------------------------------------------------------
@@ -339,8 +330,7 @@ impl DeductiveDatabase {
         let mut prog = AscentProgram::default();
 
         // Initialize input relations
-        prog.point = points.into_iter().map(|x| (x,)).collect();
-        prog.point_coords = point_coords;
+        prog.point = points;
         prog.col = col_facts;
         prog.para = para_facts;
         prog.perp = perp_facts;
@@ -359,7 +349,6 @@ impl DeductiveDatabase {
         prog.run();
 
         // Extract derived results
-        self.derived_point_coords = prog.point_coords;
         self.derived_col = prog.col;
         self.derived_para = prog.para;
         self.derived_perp = prog.perp;
@@ -379,10 +368,6 @@ impl DeductiveDatabase {
     // Output methods
     fn get_points(&self) -> Vec<(i64, i64, String)> {
         self.points.clone()
-    }
-
-    fn get_point_coords(&self) -> Vec<(String, i64, i64)> {
-        self.derived_point_coords.clone()
     }
 
     fn get_col(&self) -> Vec<(String, String, String)> {
