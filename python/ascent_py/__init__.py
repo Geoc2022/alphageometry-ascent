@@ -35,18 +35,18 @@ class DeductiveDatabase:
         """Add a point to the geometry with coordinates"""
         self._prog.add_point(x, y, name)
 
-        # Add same_orientations:
-        # TODO: Optimize this
-        points = self._prog.get_points()
-        for pts in itertools.product(points, repeat=5):
-            choosen: list[tuple[float, float, str]] = list(pts)
-            choosen.append((x, y, name))
-            names = [p[2] for p in choosen]
-            coords = [(p[0], p[1]) for p in choosen]
-            orientation = same_orientation(list(coords[:3]), list(coords[3:]))
-            if orientation == 1:
-                # print("Adding sameclock for", names)
-                self.add_sameclock(*names)
+        # # Add same_orientations:
+        # # TODO: Optimize this
+        # points = self._prog.get_points()
+        # for pts in itertools.product(points, repeat=5):
+        #     choosen: list[tuple[float, float, str]] = list(pts)
+        #     choosen.append((x, y, name))
+        #     names = [p[2] for p in choosen]
+        #     coords = [(p[0], p[1]) for p in choosen]
+        #     orientation = same_orientation(list(coords[:3]), list(coords[3:]))
+        #     if orientation == 1:
+        #         # print("Adding sameclock for", names)
+        #         self.add_sameclock(*names)
 
     def add_col(self, a: str, b: str, c: str):
         """Add collinearity fact: points a, b, c are collinear"""

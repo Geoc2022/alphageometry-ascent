@@ -3,6 +3,22 @@ use pyo3::{Bound, types::PyModule};
 use ascent::ascent;
 
 
+fn same_orientation(l1: Vec<(i64, i64, String)>, l2: Vec<(i64, i64, String)>) -> bool {
+    let edge_length = |p: (i64, i64, String), q: (i64, i64, String)| (q.0 - p.0) * (q.1 + p.1);
+
+    let mut area1 = 0;
+    for i in 0..l1.len() {
+        area1 += edge_length(l1[i].clone(), l1[(i + 1) % l1.len()].clone());
+    }
+
+    let mut area2 = 0;
+    for i in 0..l2.len() {
+        area2 += edge_length(l2[i].clone(), l2[(i + 1) % l2.len()].clone());
+    }
+
+    return (area1 * area2) > 0;
+}
+
 #[pyclass]
 struct DeductiveDatabase {
     // Input facts
@@ -231,20 +247,30 @@ impl DeductiveDatabase {
             // ----------------------------------------------------------------
 
             // AA Similarity
-            simtri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), eqangle(b, c, a, e, f, d), sameclock(a, b, c, d, e, f), 
+            simtri1(a, b, c, d, e, f) <-- 
+                eqangle(b, a, c, e, d, f), 
+                eqangle(b, c, a, e, f, d),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                ),
                 !col(a, b, c),
                 !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
-            simtri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), eqangle(b, c, a, d, f, e), sameclock(a, b, c, f, e, d), 
+                if a != b && a != c && b != c && d != e && d != f && e != f;
+            simtri2(a, b, c, d, e, f) <-- 
+                eqangle(b, a, c, f, d, e), 
+                eqangle(b, c, a, d, f, e),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                ),
                 !col(a, b, c),
                 !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
+                if a != b && a != c && b != c && d != e && d != f && e != f;
 
             // ASA Congruence
             contri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), eqangle(c, b, a, f, e, d), cong(a, b, d, e), sameclock(a, b, c, d, e, f),
