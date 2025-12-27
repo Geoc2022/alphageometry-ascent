@@ -255,10 +255,7 @@ impl DeductiveDatabase {
                 if same_orientation(
                     vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
                     vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
-                ),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c && b != c && d != e && d != f && e != f;
+                );
             simtri2(a, b, c, d, e, f) <-- 
                 eqangle(b, a, c, f, d, e), 
                 eqangle(b, c, a, d, f, e),
@@ -267,76 +264,72 @@ impl DeductiveDatabase {
                 if same_orientation(
                     vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
                     vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
-                ),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c && b != c && d != e && d != f && e != f;
+                );
 
             // ASA Congruence
-            contri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), eqangle(c, b, a, f, e, d), cong(a, b, d, e), sameclock(a, b, c, d, e, f),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
-            contri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), eqangle(c, b, a, d, e, f), cong(a, b, d, e), sameclock(a, b, c, f, e, d),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
+            contri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), eqangle(c, b, a, f, e, d), cong(a, b, d, e),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                );
+            contri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), eqangle(c, b, a, d, e, f), cong(a, b, d, e),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                );
 
             // SAS Congruence
-            contri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), cong(a, c, d, f), cong(a, b, d, e), sameclock(a, b, c, d, e, f),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
-            contri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), cong(a, c, d, f), cong(a, b, d, e), sameclock(a, b, c, f, e, d),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
+            contri1(a, b, c, d, e, f) <-- eqangle(b, a, c, e, d, f), cong(a, c, d, f), cong(a, b, d, e),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                );
+            contri2(a, b, c, d, e, f) <-- eqangle(b, a, c, f, d, e), cong(a, c, d, f), cong(a, b, d, e),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                );
 
             // SSS Congruence
-            contri1(a, b, c, d, e, f) <-- cong(a, c, d, f), cong(a, b, d, e), cong(c, b, f, e), sameclock(a, b, c, d, e, f),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
-            contri2(a, b, c, d, e, f) <-- cong(a, c, d, f), cong(a, b, d, e), cong(c, b, f, e), sameclock(a, b, c, f, e, d),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
+            contri1(a, b, c, d, e, f) <-- cong(a, c, d, f), cong(a, b, d, e), cong(c, b, f, e),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                );
+            contri2(a, b, c, d, e, f) <-- cong(a, c, d, f), cong(a, b, d, e), cong(c, b, f, e),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                );
 
             // Right SSA
-            contri1(a, b, c, d, e, f) <-- perp(a, b, a_prime, c), perp(d, e, d_prime, f), cong(a, b, d, e), cong(b, c, e, f), sameclock(a, b, c, d, e, f),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a == a_prime && d == d_prime &&
-                   a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
-            contri2(a, b, c, d, e, f) <-- perp(a, b, a_prime, c), perp(d, e, d_prime, f), cong(a, b, d, e), cong(b, c, e, f), sameclock(a, b, c, f, e, d),
-                !col(a, b, c),
-                !col(d, e, f),
-                if a == a_prime && d == d_prime &&
-                   a != b && a != c &&
-                   b != c &&
-                   d != e && d != f &&
-                   e != f;
+            contri1(a, b, c, d, e, f) <-- perp(a, b, a_prime, c), perp(d, e, d_prime, f), cong(a, b, d, e), cong(b, c, e, f),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                );
+
+            contri2(a, b, c, d, e, f) <-- perp(a, b, a_prime, c), perp(d, e, d_prime, f), cong(a, b, d, e), cong(b, c, e, f),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
+                point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
+                if same_orientation(
+                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
+                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                );
 
             // Inscribed Angle Theorem
             eqangle(a, b, c, c, b, d) <-- cong(o, a, o_prime, b), cong(o, c, o_prime, b), cong(o, c, o_prime, a), perp(o, b, b_prime, d), eqangle(a, o, c, c_prime, o, b),

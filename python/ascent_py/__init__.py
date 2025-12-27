@@ -5,25 +5,6 @@ from typing import List, Tuple
 import itertools
 
 
-def same_orientation(
-    l1: list[tuple[float, float]], l2: list[tuple[float, float]]
-) -> bool:
-    assert len(l1) == len(l2), "must be same size"
-
-    def edge_length(p, q):
-        return (q[0] - p[0]) * (q[1] + p[1])
-
-    area1 = 0
-    for i in range(len(l1)):
-        area1 += edge_length(l1[i], (l1[(i + 1) % len(l1)]))
-
-    area2 = 0
-    for i in range(len(l1)):
-        area2 += edge_length(l2[i], (l2[(i + 1) % len(l2)]))
-
-    return (area1 * area2) > 0
-
-
 class DeductiveDatabase:
     """High-level Python wrapper for geometric deduction queries"""
 
@@ -34,19 +15,6 @@ class DeductiveDatabase:
     def add_point(self, x: float = 0.0, y: float = 0.0, name: str = ""):
         """Add a point to the geometry with coordinates"""
         self._prog.add_point(x, y, name)
-
-        # # Add same_orientations:
-        # # TODO: Optimize this
-        # points = self._prog.get_points()
-        # for pts in itertools.product(points, repeat=5):
-        #     choosen: list[tuple[float, float, str]] = list(pts)
-        #     choosen.append((x, y, name))
-        #     names = [p[2] for p in choosen]
-        #     coords = [(p[0], p[1]) for p in choosen]
-        #     orientation = same_orientation(list(coords[:3]), list(coords[3:]))
-        #     if orientation == 1:
-        #         # print("Adding sameclock for", names)
-        #         self.add_sameclock(*names)
 
     def add_col(self, a: str, b: str, c: str):
         """Add collinearity fact: points a, b, c are collinear"""
