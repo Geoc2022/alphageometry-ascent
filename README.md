@@ -1,4 +1,4 @@
-# Alpha Geometry
+# Alpha Geometry DDAR with Ascent
 
 This repository contains an implementation of Alpha Geometry, a system for developing proofs in geometry using a deductive database, algebraic reasoning, and a LLM in order to prove geometric theorems.
 
