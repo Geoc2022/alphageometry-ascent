@@ -1,7 +1,9 @@
 from __future__ import annotations  # unneeded in python 3.11+
 from dataclasses import dataclass, field
-from typing import Generic, Optional, TypeVar, Callable
+from typing import Generic, Optional, TypeVar, Callable, Iterator
 import functools
+import itertools
+import inspect
 from math import atan2, pi, isclose
 
 
@@ -199,6 +201,30 @@ class Predicate(Generic[T]):
                 return False
         return True
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Predicate]:
+        """
+        Generate all possible instances of this predicate from given points.
+        Uses inspect to determine the signature and generate appropriate combinations.
+        """
+        sig = inspect.signature(cls.__init__)
+        params = [
+            p
+            for p in sig.parameters.values()
+            if p.name not in ("self", "args", "kwargs")
+        ]
+
+        point_params = [p for p in params if p.annotation == Point]
+        nonpoint_params = any(p for p in params if p.annotation != Point)
+
+        if not nonpoint_params:
+            for point_combo in itertools.permutations(points, len(point_params)):
+                yield cls(*point_combo)
+        else:
+            raise NotImplementedError(
+                f"{cls.__name__} has non-Point parameters requiring custom generation"
+            )
+
 
 class Col(Predicate):
     """A B C are collinear"""
@@ -211,6 +237,11 @@ class Col(Predicate):
 
     def to_angle_rows(self) -> list[AngleRow]:
         return collect_rows(self.data, Para, lambda p: p.to_angle_rows())
+
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Col]:
+        for point_combo in itertools.combinations(points, 3):
+            yield cls(*point_combo)
 
 
 class Perp(Predicate):
@@ -248,6 +279,11 @@ class Perp(Predicate):
             return False
         return True
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Perp]:
+        for p1, p2 in itertools.combinations(itertools.combinations(points, 2), 2):
+            yield cls(*p1, *p2)
+
 
 class Cong(Predicate):
     """A B ≅ C D"""
@@ -275,6 +311,11 @@ class Cong(Predicate):
         if not isclose(distance(*line1), distance(*line2)):
             return False
         return True
+
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Cong]:
+        for p1, p2 in itertools.combinations(itertools.combinations(points, 2), 2):
+            yield cls(*p1, *p2)
 
 
 class Simtri1(Predicate):
@@ -304,6 +345,11 @@ class Simtri1(Predicate):
     def to_ratio_rows(self) -> list[RatioRow]:
         return collect_rows(self.data, Eqratio, lambda p: p.to_ratio_rows())
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Simtri1]:
+        for t1, t2 in itertools.combinations(itertools.permutations(points, 3), 2):
+            yield cls(*t1, *t2)
+
 
 class Simtri2(Predicate):
     """△ABC ~ △DEF with mirror symmetry"""
@@ -327,6 +373,11 @@ class Simtri2(Predicate):
 
     def to_ratio_rows(self) -> list[RatioRow]:
         return collect_rows(self.data, Eqratio, lambda p: p.to_ratio_rows())
+
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Simtri2]:
+        for t1, t2 in itertools.combinations(itertools.permutations(points, 3), 2):
+            yield cls(*t1, *t2)
 
 
 class Eqangle(Predicate):
@@ -387,6 +438,11 @@ class Eqangle(Predicate):
             return False
         return True
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Eqangle]:
+        for a1, a2 in itertools.combinations(itertools.permutations(points, 3), 2):
+            yield cls(*a1, *a2)
+
 
 class Para(Predicate):
     """A B || C D"""
@@ -419,6 +475,11 @@ class Para(Predicate):
             return False
         return True
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Para]:
+        for p1, p2 in itertools.combinations(itertools.combinations(points, 2), 2):
+            yield cls(*p1, *p2)
+
 
 class Contri1(Predicate):
     """△ABC ≅ △DEF"""
@@ -443,6 +504,11 @@ class Contri1(Predicate):
 
     def to_ratio_rows(self) -> list[RatioRow]:
         return collect_rows(self.data, Cong, lambda p: p.to_ratio_rows())
+
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Contri1]:
+        for t1, t2 in itertools.combinations(itertools.permutations(points, 3), 2):
+            yield cls(*t1, *t2)
 
 
 class Contri2(Predicate):
@@ -469,6 +535,11 @@ class Contri2(Predicate):
     def to_ratio_rows(self) -> list[RatioRow]:
         return collect_rows(self.data, Cong, lambda p: p.to_ratio_rows())
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Contri2]:
+        for t1, t2 in itertools.combinations(itertools.permutations(points, 3), 2):
+            yield cls(*t1, *t2)
+
 
 class Cyclic(Predicate):
     """A B C D lie on a circle"""
@@ -489,6 +560,11 @@ class Cyclic(Predicate):
     def to_angle_rows(self) -> list[AngleRow]:
         return collect_rows(self.data, Eqangle, lambda p: p.to_angle_rows())
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Cyclic]:
+        for p in itertools.permutations(points, 4):
+            yield cls(*p)
+
 
 class Sameclock(Predicate):
     """A B C D are in the same clockwise order"""
@@ -507,6 +583,11 @@ class Sameclock(Predicate):
         l2 = angles[1]
         return same_orientation(list(l1), list(l2))
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Sameclock]:
+        for t1, t2 in itertools.combinations(itertools.permutations(points, 3), 2):
+            yield cls(*t1, *t2)
+
 
 class Midp(Predicate):
     """M is the midpoint of A B"""
@@ -522,6 +603,11 @@ class Midp(Predicate):
 
     def to_ratio_rows(self) -> list[RatioRow]:
         return collect_rows(self.data, Cong, lambda p: p.to_ratio_rows())
+
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Midp]:
+        for p in itertools.permutations(points, 3):
+            yield cls(*p)
 
 
 class Eqratio(Predicate):
@@ -584,6 +670,11 @@ class Eqratio(Predicate):
             return False
         return True
 
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Eqratio]:
+        for p in itertools.permutations(points, 8):
+            yield cls(*p)
+
 
 class Aconst(Predicate):
     """∠ABC = mπ/n"""
@@ -613,6 +704,24 @@ class Aconst(Predicate):
         if not isclose(angle, (m * pi) / n):
             return False
         return True
+
+    @classmethod
+    def generate(cls, points: set[Point]) -> Iterator[Aconst]:
+        # Common angle constants: 0, π/6, π/4, π/3, π/2, 2π/3, 3π/4, 5π/6, π
+        angle_constants = [
+            (0, 1),
+            (1, 6),
+            (1, 4),
+            (1, 3),
+            (1, 2),
+            (2, 3),
+            (3, 4),
+            (5, 6),
+            (1, 1),
+        ]
+        for point_combo in itertools.permutations(points, 3):
+            for m, n in angle_constants:
+                yield cls(*point_combo, m, n)
 
 
 ## CUSTOM PREDICATES (not on the spreadsheet) ##

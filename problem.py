@@ -6,6 +6,16 @@ from relations import (
     Para,
     Perp,
     Eqangle,
+    # Col,
+    # Simtri1,
+    # Simtri2,
+    # Contri1,
+    # Contri2,
+    # Cyclic,
+    # Sameclock,
+    # Midp,
+    # Eqratio,
+    # Aconst,
 )
 import itertools
 from dd import DD
@@ -128,51 +138,37 @@ class Problem:
         """
         Scans through all predicate types with all point combinations.
         """
+        predicate_classes = [
+            Cong,
+            Para,
+            Perp,
+            Eqangle,
+            # Col,
+            # Simtri1,
+            # Simtri2,
+            # Contri1,
+            # Contri2,
+            # Cyclic,
+            # Sameclock,
+            # Midp,
+            # Eqratio,
+            # Aconst,
+        ]
 
-        def check_possible(predicate: Predicate):
-            if predicate in self.impossible_relations:
-                return False
-            if predicate in self.possible_relations:
-                return True
-            else:
-                if predicate.is_valid():
-                    self.possible_relations.add(predicate)
-                    return True
-                else:
-                    self.impossible_relations.add(predicate)
-                    return False
+        for pred_class in predicate_classes:
+            for predicate in pred_class.generate(self.points):
+                if predicate in self.impossible_relations:
+                    continue
+                if predicate not in self.possible_relations:
+                    if predicate.is_valid():
+                        self.possible_relations.add(predicate)
+                    else:
+                        self.impossible_relations.add(predicate)
+                        continue
 
-        # Search Cong
-        for line1, line2 in itertools.product(
-            itertools.combinations(self.points, 2), repeat=2
-        ):
-            cong = Cong(*line1, *line2)
-            if check_possible(cong) and cong not in self.predicates:
-                self.can_deduce(cong)
-
-        # Search Para
-        for line1, line2 in itertools.product(
-            itertools.combinations(self.points, 2), repeat=2
-        ):
-            para = Para(*line1, *line2)
-            if check_possible(para) and para not in self.predicates:
-                self.can_deduce(para)
-
-        # Search Perp
-        for line1, line2 in itertools.product(
-            itertools.combinations(self.points, 2), repeat=2
-        ):
-            perp = Perp(*line1, *line2)
-            if check_possible(perp) and perp not in self.predicates:
-                self.can_deduce(perp)
-
-        # Search Eqangle
-        for angle1, angle2 in itertools.product(
-            itertools.permutations(self.points, 3), repeat=2
-        ):
-            eqangle = Eqangle(*angle1, *angle2)
-            if check_possible(eqangle) and eqangle not in self.predicates:
-                self.can_deduce(eqangle)
+                if predicate not in self.predicates:
+                    # assert that the inputs are points with names
+                    self.can_deduce(predicate)
 
     def __str__(self) -> str:
         """
