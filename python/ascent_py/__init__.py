@@ -12,9 +12,9 @@ class DeductiveDatabase:
         self._prog = _DeductiveDatabase()
 
     # Input methods
-    def add_point(self, x: float = 0.0, y: float = 0.0, name: str = ""):
+    def add_point(self, x: int = 0, y: int = 0, name: str = ""):
         """Add a point to the geometry with coordinates"""
-        self._prog.add_point(x, y, name)
+        self._prog.add_point(int(x), int(y), name)
 
     def add_col(self, a: str, b: str, c: str):
         """Add collinearity fact: points a, b, c are collinear"""
@@ -78,69 +78,99 @@ class DeductiveDatabase:
         """Execute the Datalog deduction rules"""
         self._prog.run()
 
-    # Output methods
-    def get_col(self) -> List[Tuple[str, str, str]]:
-        """Get all deduced collinear point sets"""
+    # Output methods - now return full derivation information
+    def get_col(self) -> List[Tuple[str, str, str, List[Tuple[str, List[str]]]]]:
+        """
+        Get all deduced collinear point sets with full derivation provenance.
+
+        Returns:
+            List of (a, b, c, derivations) where derivations is a list of
+            (rule_name, parent_fact_ids) tuples
+        """
         return self._prog.get_col()
 
-    def get_para(self) -> List[Tuple[str, str, str, str]]:
-        """Get all deduced parallel relationships"""
+    def get_para(self) -> List[Tuple[str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced parallel relationships with full derivation provenance"""
         return self._prog.get_para()
 
-    def get_perp(self) -> List[Tuple[str, str, str, str]]:
-        """Get all deduced perpendicular relationships"""
+    def get_perp(self) -> List[Tuple[str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced perpendicular relationships with full derivation provenance"""
         return self._prog.get_perp()
 
-    def get_cong(self) -> List[Tuple[str, str, str, str]]:
-        """Get all deduced congruent segments"""
+    def get_cong(self) -> List[Tuple[str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced congruent segments with full derivation provenance"""
         return self._prog.get_cong()
 
-    def get_eqangle(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced equal angles"""
+    def get_eqangle(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced equal angles with full derivation provenance"""
         return self._prog.get_eqangle()
 
-    def get_cyclic(self) -> List[Tuple[str, str, str, str]]:
-        """Get all deduced cyclic point sets"""
+    def get_cyclic(
+        self,
+    ) -> List[Tuple[str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced cyclic point sets with full derivation provenance"""
         return self._prog.get_cyclic()
 
-    def get_sameclock(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced sameclock relationships"""
+    def get_sameclock(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced sameclock relationships with full derivation provenance"""
         return self._prog.get_sameclock()
 
-    def get_midp(self) -> List[Tuple[str, str, str]]:
-        """Get all deduced midpoint relationships"""
+    def get_midp(self) -> List[Tuple[str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced midpoint relationships with full derivation provenance"""
         return self._prog.get_midp()
 
-    def get_contri1(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced congruent triangles (same orientation)"""
+    def get_contri1(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced congruent triangles (same orientation) with full derivation provenance"""
         return self._prog.get_contri1()
 
-    def get_contri2(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced congruent triangles (opposite orientation)"""
+    def get_contri2(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced congruent triangles (opposite orientation) with full derivation provenance"""
         return self._prog.get_contri2()
 
-    def get_simtri1(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced similar triangles (same orientation)"""
+    def get_simtri1(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced similar triangles (same orientation) with full derivation provenance"""
         return self._prog.get_simtri1()
 
-    def get_simtri2(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced similar triangles (opposite orientation)"""
+    def get_simtri2(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced similar triangles (opposite orientation) with full derivation provenance"""
         return self._prog.get_simtri2()
 
-    def get_eqratio(self) -> List[Tuple[str, str, str, str, str, str, str, str]]:
-        """Get all deduced equal ratios"""
+    def get_eqratio(
+        self,
+    ) -> List[
+        Tuple[str, str, str, str, str, str, str, str, List[Tuple[str, List[str]]]]
+    ]:
+        """Get all deduced equal ratios with full derivation provenance"""
         return self._prog.get_eqratio()
 
-    def get_aconst(self) -> List[Tuple[str, str, str, int, int]]:
-        """Get all deduced constant angle relationships"""
+    def get_aconst(
+        self,
+    ) -> List[Tuple[str, str, str, int, int, List[Tuple[str, List[str]]]]]:
+        """Get all deduced constant angle relationships with full derivation provenance"""
         return self._prog.get_aconst()
 
-    def get_similar_triangles(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced similar triangles (both orientations combined)"""
+    def get_similar_triangles(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced similar triangles (both orientations combined) with full derivation provenance"""
         return self.get_simtri1() + self.get_simtri2()
 
-    def get_congruent_triangles(self) -> List[Tuple[str, str, str, str, str, str]]:
-        """Get all deduced congruent triangles (both orientations combined)"""
+    def get_congruent_triangles(
+        self,
+    ) -> List[Tuple[str, str, str, str, str, str, List[Tuple[str, List[str]]]]]:
+        """Get all deduced congruent triangles (both orientations combined) with full derivation provenance"""
         return self.get_contri1() + self.get_contri2()
 
     def __repr__(self):

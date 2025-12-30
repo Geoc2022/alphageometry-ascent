@@ -42,7 +42,7 @@ class AngleMatrix:
         implicit_deducitons = set()
         for row in b_rows:
             if not row.data:
-                implicit_deducitons.add(Deduction(row.predicate, set()))
+                implicit_deducitons.add(Deduction(row.predicate, set(), "AR_trivial"))
         if implicit_deducitons:
             return implicit_deducitons
 
@@ -107,7 +107,7 @@ class AngleMatrix:
                     parent_predicates.add(index_to_pred[i])
             if not parent_predicates:
                 continue
-            deductions.add(Deduction(b_row.predicate, parent_predicates))
+            deductions.add(Deduction(b_row.predicate, parent_predicates, "AR"))
         return deductions
 
     def __str__(self) -> str:
@@ -133,7 +133,7 @@ class RatioMatrix:
         implicit_deducitons = set()
         for row in b_rows:
             if not row.data:
-                implicit_deducitons.add(Deduction(row.predicate, set()))
+                implicit_deducitons.add(Deduction(row.predicate, set(), "AR_implicit"))
         if implicit_deducitons:
             return implicit_deducitons
 
@@ -189,7 +189,7 @@ class RatioMatrix:
                     parent_predicates.add(index_to_pred[i])
             if not parent_predicates:
                 continue
-            deductions.add(Deduction(b_row.predicate, parent_predicates))
+            deductions.add(Deduction(b_row.predicate, parent_predicates, "AR"))
         return deductions
 
     def __str__(self) -> str:

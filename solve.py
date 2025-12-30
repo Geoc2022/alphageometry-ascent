@@ -52,7 +52,7 @@ def prove(problem: Problem):
 
     changed = True
     iteration = 0
-    max_iterations = 100
+    max_iterations = 3
 
     print("Initial Predicates:")
     for pred in problem.predicates:
@@ -70,18 +70,12 @@ def prove(problem: Problem):
 
         previous_count = len(problem.predicates)
 
-        # Call each deduction function and collect new predicates
         for deduction_fn in dd.functions:
-            new_predicates = deduction_fn(problem)
-
-            # Add new predicates to the deductions buffer
-            for pred in new_predicates:
-                problem.add_deduction(pred)
+            deduction_fn(problem)
 
         if not problem.is_solved():
             problem.search_ar()
 
-        # Flush all deductions at once
         problem.flush_deductions()
 
         changed = len(problem.predicates) > previous_count
@@ -89,15 +83,15 @@ def prove(problem: Problem):
         if changed:
             print(f"Added {len(problem.predicates) - previous_count} new predicates")
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     if iteration >= max_iterations:
         print(f"Stopped after {max_iterations} iterations")
 
     print(problem)
     if problem.is_solved():
-        print("Solved!")
+        print("\x1b[32mSolved!\x1b[0m")
     else:
-        print("Could not solve")
+        print("\x1b[31mCould not solve the problem.\x1b[0m")
         exit(1)
 
 
