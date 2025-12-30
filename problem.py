@@ -28,7 +28,7 @@ class Problem:
         self.predicates = {}
         self.goals = goals
         self.points = points
-        self.dd = DD(points, predicates)
+        self.dd = DD(points, set())
         self.ar = AR()
         self.deductions_buffer = []
         self.possible_relations = set()
@@ -37,7 +37,6 @@ class Problem:
         for predicate in predicates:
             if predicate.is_valid():
                 self._add_predicate(predicate, set(), "axiom")
-                self.ar.add_predicate(predicate)
             else:
                 raise ValueError(f"Invalid initial predicate: {predicate}")
 
@@ -48,33 +47,9 @@ class Problem:
     def flush_deductions(self):
         """Flush the deductions buffer and add predicates to the problem and DD."""
         for deduction in self.deductions_buffer:
-            if deduction.predicate in self.predicates:
-                self._add_predicate(
-                    deduction.predicate,
-                    deduction.parent_predicates,
-                    deduction.rule_name,
-                )
-                continue
-
-            # Add to DD
-            self.dd.add_predicate(deduction.predicate)
-            for subpredicate in deduction.predicate.to_sub_data():
-                self.dd.add_predicate(subpredicate.predicate)
-
-            # Add to AR
-            self.ar.add_predicate(deduction.predicate)
-
-            # Add to problem predicates
             self._add_predicate(
                 deduction.predicate, deduction.parent_predicates, deduction.rule_name
             )
-            for subpredicate in deduction.predicate.to_sub_data():
-                if subpredicate.predicate not in self.predicates:
-                    self._add_predicate(
-                        subpredicate.predicate,
-                        subpredicate.parent_predicates,
-                        "sub_deduction",
-                    )
 
         self.deductions_buffer.clear()
 
@@ -103,6 +78,13 @@ class Problem:
         parent_predicates: set[Predicate],
         rule_name: str = "unknown",
     ):
+        if predicate in self.goals:
+            print(f"\x1b[34mFound: {predicate}\x1b[0m via {rule_name}")
+        for sub in predicate.to_sub_data():
+            if sub.predicate in self.goals:
+                print(
+                    f"\x1b[34mFound: {sub.predicate}\x1b[0m as part of {predicate} via {rule_name}"
+                )
         if predicate not in self.predicates:
             self.predicates[predicate] = []
 
@@ -121,6 +103,8 @@ class Problem:
         deduction = Deduction(predicate, parent_predicates, rule_name)
         if deduction not in self.predicates[predicate]:
             self.predicates[predicate].append(deduction)
+        self.dd.add_predicate(deduction.predicate)
+        self.ar.add_predicate(deduction.predicate)
 
         # Handle sub-predicates
         for sub_deduction in predicate.to_sub_data():
@@ -134,6 +118,7 @@ class Problem:
             )
             if sub_ded not in self.predicates[sub_deduction.predicate]:
                 self.predicates[sub_deduction.predicate].append(sub_ded)
+            self.dd.add_predicate(sub_ded.predicate)
 
     def is_solved(self) -> bool:
         # We have solved the problem if all goals are in self.predicates

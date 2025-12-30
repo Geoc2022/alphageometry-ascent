@@ -176,7 +176,7 @@ class Predicate(Generic[T]):
             if not isinstance(pred, Predicate):
                 continue
 
-            deductions.add(Deduction(pred, {self}))
+            deductions.add(Deduction(pred, {self}, "subpredicate"))
             deductions |= pred.to_sub_data()
 
         return deductions
