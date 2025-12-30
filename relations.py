@@ -140,9 +140,10 @@ def collect_rows(
 class Deduction:
     predicate: Predicate
     parent_predicates: set[Predicate]
+    rule_name: str = "unknown"
 
     def __hash__(self):
-        return hash((self.predicate, frozenset(self.parent_predicates)))
+        return hash((self.predicate, frozenset(self.parent_predicates), self.rule_name))
 
 
 class Predicate(Generic[T]):

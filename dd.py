@@ -115,14 +115,13 @@ class DD:
     def get_new_deductions(self) -> set[Deduction]:
         """
         Extract newly deduced predicates from the database with provenance.
-        Only returns predicates that haven't been extracted before.
+        Creates a separate Deduction for each derivation path.
 
         Returns:
-            Set of newly deduced Deduction objects (predicate + parent predicates)
+            Set of newly deduced Deduction objects (one per derivation path)
         """
         # PASS 1: Extract all predicates and build fact_id mappings
-        # This ensures all derived facts are registered before we try to resolve parents
-        all_predicates = {}  # fact_id -> pred
+        all_predicates = {}
 
         for pred_name, (pred_class, arity, db_method) in _PREDICATE_REGISTRY.items():
             getter = getattr(self.db, f"get_{db_method}")
@@ -133,11 +132,10 @@ class DD:
                 pred = self._extract_predicate(pred_class, tuple(point_names))
                 fact_id = self._make_fact_id(pred_name, point_names)
 
-                # Store in both temporary dict and persistent mapping
                 all_predicates[fact_id] = pred
                 self._fact_id_to_predicate[fact_id] = pred
 
-        # PASS 2: Build deductions with proper parent references
+        # PASS 2: Build separate deductions for each derivation path
         new_deductions = set()
 
         for pred_name, (pred_class, arity, db_method) in _PREDICATE_REGISTRY.items():
@@ -150,14 +148,26 @@ class DD:
                 pred = all_predicates[fact_id]
 
                 if pred not in self._extracted_predicates:
-                    # Now all parents should be resolvable
-                    parent_predicates = self._build_parent_predicates(derivations)
+                    for rule_name, parent_fact_ids in derivations:
+                        parent_predicates = set()
 
-                    deduction = Deduction(
-                        predicate=pred, parent_predicates=parent_predicates
-                    )
+                        for parent_fact_id in parent_fact_ids:
+                            if parent_fact_id in self._fact_id_to_predicate:
+                                parent_predicates.add(
+                                    self._fact_id_to_predicate[parent_fact_id]
+                                )
+                            else:
+                                print(
+                                    f"Warning: Missing parent fact {parent_fact_id} for rule {rule_name}"
+                                )
 
-                    new_deductions.add(deduction)
+                        deduction = Deduction(
+                            predicate=pred,
+                            parent_predicates=parent_predicates,
+                            rule_name=rule_name,
+                        )
+                        new_deductions.add(deduction)
+
                     self._extracted_predicates.add(pred)
 
         return new_deductions
@@ -197,8 +207,6 @@ class DD:
                 if parent_fact_id in self._fact_id_to_predicate:
                     parent_predicates.add(self._fact_id_to_predicate[parent_fact_id])
                 else:
-                    # This should now be very rare - only for axiom parents
-                    # Log a warning if you want to debug
                     print(
                         f"Warning: Missing parent fact {parent_fact_id} for rule {rule_name}"
                     )
@@ -224,12 +232,12 @@ def deduce_from_datalog(problem) -> None:
     # Extract and return new deductions
     deductions = problem.dd.get_new_deductions()
 
-    # Update the problem with full deduction information
     for deduction in deductions:
-        problem._add_predicate(deduction.predicate, deduction.parent_predicates)
+        problem._add_predicate(
+            deduction.predicate, deduction.parent_predicates, deduction.rule_name
+        )
 
-    # Return just the predicates for backwards compatibility
-    # return {d.predicate for d in deductions}
+    return
 
 
 # Export the deduction functions list for the solver

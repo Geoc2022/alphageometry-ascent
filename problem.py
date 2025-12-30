@@ -13,7 +13,7 @@ from ar import AR
 
 
 class Problem:
-    predicates: dict[Predicate, set[Predicate]]
+    predicates: dict[Predicate, list[Deduction]]
     goals: set[Predicate]
     points: set[Point]
     ar: AR
@@ -36,7 +36,7 @@ class Problem:
 
         for predicate in predicates:
             if predicate.is_valid():
-                self._add_predicate(predicate, set())
+                self._add_predicate(predicate, set(), "axiom")
                 self.ar.add_predicate(predicate)
             else:
                 raise ValueError(f"Invalid initial predicate: {predicate}")
@@ -49,6 +49,11 @@ class Problem:
         """Flush the deductions buffer and add predicates to the problem and DD."""
         for deduction in self.deductions_buffer:
             if deduction.predicate in self.predicates:
+                self._add_predicate(
+                    deduction.predicate,
+                    deduction.parent_predicates,
+                    deduction.rule_name,
+                )
                 continue
 
             # Add to DD
@@ -60,13 +65,16 @@ class Problem:
             self.ar.add_predicate(deduction.predicate)
 
             # Add to problem predicates
-            self._add_predicate(deduction.predicate, deduction.parent_predicates)
+            self._add_predicate(
+                deduction.predicate, deduction.parent_predicates, deduction.rule_name
+            )
             for subpredicate in deduction.predicate.to_sub_data():
-                if subpredicate.predicate in self.predicates:
-                    continue
-                self._add_predicate(
-                    subpredicate.predicate, subpredicate.parent_predicates
-                )
+                if subpredicate.predicate not in self.predicates:
+                    self._add_predicate(
+                        subpredicate.predicate,
+                        subpredicate.parent_predicates,
+                        "sub_deduction",
+                    )
 
         self.deductions_buffer.clear()
 
@@ -89,10 +97,14 @@ class Problem:
             self.add_deduction(deduction)
         return False
 
-    def _add_predicate(self, predicate: Predicate, parent_predicates: set[Predicate]):
-        if predicate in self.predicates:
-            # If the predicate is already in self.predicates, just ignore it...
-            return
+    def _add_predicate(
+        self,
+        predicate: Predicate,
+        parent_predicates: set[Predicate],
+        rule_name: str = "unknown",
+    ):
+        if predicate not in self.predicates:
+            self.predicates[predicate] = []
 
         if predicate in self.impossible_relations:
             print(f"Predicate {predicate} is marked impossible, cannot add.")
@@ -105,21 +117,23 @@ class Problem:
                 self.impossible_relations.add(predicate)
                 return
 
-        # Assert the invariant that all parent_predicates are already in self.predicates
-        for p in parent_predicates:
-            # if p not in self.predicates:
-            #     raise RuntimeError(
-            #         f"Parent predicate {p} not in predicates when adding {predicate}"
-            #     )
-            # assert p in self.predicates
-            pass
+        # Store this derivation path
+        deduction = Deduction(predicate, parent_predicates, rule_name)
+        if deduction not in self.predicates[predicate]:
+            self.predicates[predicate].append(deduction)
 
-        self.predicates[predicate] = parent_predicates
+        # Handle sub-predicates
         for sub_deduction in predicate.to_sub_data():
             if sub_deduction.predicate not in self.predicates:
-                self.predicates[sub_deduction.predicate] = (
-                    sub_deduction.parent_predicates
-                )
+                self.predicates[sub_deduction.predicate] = []
+
+            sub_ded = Deduction(
+                sub_deduction.predicate,
+                sub_deduction.parent_predicates,
+                "sub_deduction",
+            )
+            if sub_ded not in self.predicates[sub_deduction.predicate]:
+                self.predicates[sub_deduction.predicate].append(sub_ded)
 
     def is_solved(self) -> bool:
         # We have solved the problem if all goals are in self.predicates
@@ -178,24 +192,27 @@ class Problem:
     def __str__(self) -> str:
         """
         Generate a string version of the solved problem.
-
-        Returns a numbered list of predicates showing the logical derivation
-        from assumptions to goals, including parent predicate references.
-
-        Returns:
-            str: Formatted proof steps or error message if unsolved/invalid
+        Uses smart derivation selection during topological sort.
         """
         if not self.is_solved():
-            return "Unsolved"
+            return ""
 
-        # Validate goals
         if not self.goals:
             return "No goals specified"
-        # First, we want to get a list of all predicates that were used in some way or another to reach the goals
-        # We'll use backward traversal from goals to find only predicates in the derivation chain
+
+        RULE_PRIORITY = {
+            "axiom": 0,
+            "rfl": 1,
+            "sub_deduction": 2,
+            "AR": 10,
+            "sym": 20,
+        }
+
+        def get_priority(rule_name: str) -> int:
+            return RULE_PRIORITY.get(rule_name, 5)
 
         def find_reachable_predicates():
-            """Find all predicates that are reachable from the goals by backward traversal."""
+            """Find all predicates reachable from goals."""
             reachable = set()
             to_visit = set(self.goals)
 
@@ -206,9 +223,9 @@ class Problem:
 
                 reachable.add(current)
                 if current in self.predicates:
-                    # Only add unvisited parents to avoid redundant work
-                    new_parents = self.predicates[current] - reachable
-                    to_visit.update(new_parents)
+                    for deduction in self.predicates[current]:
+                        new_parents = deduction.parent_predicates - reachable
+                        to_visit.update(new_parents)
 
             return reachable
 
@@ -217,62 +234,83 @@ class Problem:
         # Check for unreachable goals
         unreachable_goals = self.goals - goal_reachable_predicates
         if unreachable_goals:
-            return f"Unreachable goals: {unreachable_goals}"
+            return f"Unreachable goals: {' '.join([str(goal) for goal in unreachable_goals])}"
 
-        # Filter self.predicates to only include goal-reachable predicates
-        filtered_predicates = {
-            p: parents
-            for p, parents in self.predicates.items()
-            if p in goal_reachable_predicates
-        }
+        # Select best derivation for each predicate using topological sort
+        selected_derivations: dict[Predicate, Deduction] = {}
+        used_predicates = set()
+        ordered_predicates: list[tuple[Predicate, Deduction]] = []
 
-        # Start with the predicates that were assumed true from the start (and are goal-reachable)
-        used_predicates = {
-            p for p, parents in filtered_predicates.items() if len(parents) == 0
-        }
-        ordered_predicates: list[tuple[Predicate, set[Predicate]]] = [
-            (p, set()) for p in used_predicates
-        ]
+        # Start with axioms
+        for pred, deductions in self.predicates.items():
+            if pred not in goal_reachable_predicates:
+                continue
+            axiom_deductions = [d for d in deductions if len(d.parent_predicates) == 0]
+            if axiom_deductions:
+                best = min(axiom_deductions, key=lambda d: get_priority(d.rule_name))
+                selected_derivations[pred] = best
+                used_predicates.add(pred)
+                ordered_predicates.append((pred, best))
 
-        # Topological sort with infinite loop protection
+        # Topological sort with smart derivation selection
         prev_used_count = -1
         while any(goal not in used_predicates for goal in self.goals):
             current_count = len(used_predicates)
             if current_count == prev_used_count:
-                # No progress made - potential infinite loop or missing predicates
                 remaining_goals = [
                     goal for goal in self.goals if goal not in used_predicates
                 ]
-                full_tree = "\n".join(
-                    [
-                        f"{str(k):<20} | {', '.join([str(vi) for vi in list(v)])}"
-                        for k, v in self.predicates.items()
-                    ]
-                )
                 raise RuntimeError(
-                    f"Cannot complete proof - unreachable goals: {'\n'.join([str(goal) for goal in remaining_goals])}\n{full_tree}"
+                    f"Cannot complete proof - unreachable goals: {remaining_goals}"
                 )
             prev_used_count = current_count
 
-            for predicate, parent_predicates in filtered_predicates.items():
+            for predicate, deductions in self.predicates.items():
+                if predicate not in goal_reachable_predicates:
+                    continue
                 if predicate in used_predicates:
                     continue
-                if all(parent in used_predicates for parent in parent_predicates):
-                    used_predicates.add(predicate)
-                    ordered_predicates.append((predicate, parent_predicates))
 
+                # Find all valid derivations (where all parents are already proven)
+                valid_derivations = [
+                    d
+                    for d in deductions
+                    if all(parent in used_predicates for parent in d.parent_predicates)
+                ]
+
+                if valid_derivations:
+                    # Select best derivation by rule priority
+                    best = min(
+                        valid_derivations, key=lambda d: get_priority(d.rule_name)
+                    )
+                    selected_derivations[predicate] = best
+                    used_predicates.add(predicate)
+                    ordered_predicates.append((predicate, best))
+
+        # Build output
         numbering: dict[Predicate, int] = {}
         for i, (predicate, _) in enumerate(ordered_predicates):
             numbering[predicate] = i + 1
 
-        # Build result efficiently using list join
         lines = []
-        for predicate, parents in ordered_predicates:
-            parent_refs = (
-                ""
-                if not parents
-                else " (" + ",".join(f"[{numbering[p]}]" for p in parents) + ")"
+
+        for predicate, deduction in ordered_predicates:
+            num = numbering[predicate]
+            padded_pred = f"{str(predicate):<25}"
+            pred = (
+                padded_pred
+                if predicate not in self.goals
+                else f"\x1b[32m{padded_pred}\x1b[0m"
             )
-            lines.append(f"[{numbering[predicate]}] {predicate}{parent_refs}")
+            parents = (
+                ""
+                if not deduction.parent_predicates
+                else ",".join(f"[{numbering[p]}]" for p in deduction.parent_predicates)
+            )
+
+            rule = f"{deduction.rule_name}" if deduction.rule_name != "unknown" else ""
+            line = f"[{num}] {pred}\t| {rule} {parents}"
+
+            lines.append(line)
 
         return "\n".join(lines)
