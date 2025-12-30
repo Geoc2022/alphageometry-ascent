@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "ascent-py"
 version = "0.1.0"
 description = "Python bindings for Ascent Datalog"
-requires-python = ">=3.8,<3.14"
+requires-python = ">=3.12,<3.14"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",

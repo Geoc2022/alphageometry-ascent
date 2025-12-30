@@ -1,7 +1,7 @@
 """Deduction module using Ascent datalog database."""
 
 from python.ascent_py import DeductiveDatabase
-from relations import Point, Predicate
+from relations import Point, Predicate, Deduction
 import relations
 import inspect
 
@@ -15,7 +15,7 @@ def _build_predicate_registry():
 
     # Get all classes from the relations module
     for name, obj in inspect.getmembers(relations, inspect.isclass):
-        # Only include classes that are subclasses of Predicate (but not Predicate itself or Point)
+        # Only include classes that are subclasses of Predicate
         if issubclass(obj, Predicate) and obj is not Predicate:
             # Get the __init__ signature to determine arity
             sig = inspect.signature(obj.__init__)
@@ -37,7 +37,9 @@ class DD:
     Maintains correspondence between Point objects and their string names.
     """
 
-    def __init__(self, points: set[Point], initial_predicates: set[Predicate]):
+    def __init__(
+        self, points: set[Point] = set(), initial_predicates: set[Predicate] = set()
+    ):
         """
         Initialize the deductive database with points and initial predicates.
 
@@ -46,21 +48,23 @@ class DD:
             initial_predicates: Set of initial Predicate facts
         """
         self.db = DeductiveDatabase()
+        self.predicates: set[Predicate] = set()
 
         self.point_by_name: dict[str, Point] = {}
         self.name_by_point: dict[Point, str] = {}
 
+        self._extracted_predicates: set[Predicate] = set()
+        self._fact_id_to_predicate: dict[str, Predicate] = {}
+
         for point in points:
-            self._add_point(point)
+            self.add_point(point)
 
         for predicate in initial_predicates:
             self.add_predicate(predicate)
 
         self.db.run()
 
-        self._extracted_predicates: set[Predicate] = set()
-
-    def _add_point(self, point: Point):
+    def add_point(self, point: Point):
         """Add a point to the database and maintain mappings."""
         if point not in self.name_by_point:
             x = int(point.x * 100)
@@ -69,18 +73,16 @@ class DD:
             self.point_by_name[point.name] = point
             self.name_by_point[point] = point.name
 
-    def add_point(self, point: Point):
-        """
-        Add a new point to the database (for future extensibility).
-        Must call run() after adding points to deduce new facts.
-        """
-        self._add_point(point)
-
     def add_predicate(self, predicate: Predicate):
         """
         Add a predicate to the deductive database.
         Must call run() after adding predicates to deduce new facts.
         """
+        if predicate in self.predicates:
+            return
+        else:
+            self.predicates.add(predicate)
+
         if not predicate._init_args:
             return
 
@@ -98,33 +100,67 @@ class DD:
             method = getattr(self.db, f"add_{db_method}")
             method(*point_names)
 
+            # Store the fact_id mapping
+            fact_id = self._make_fact_id(pred_type, point_names)
+            self._fact_id_to_predicate[fact_id] = predicate
+
     def run(self):
         """Run the datalog deduction engine."""
         self.db.run()
 
-    def get_new_deductions(self) -> set[Predicate]:
+    def _make_fact_id(self, pred_type: str, point_names: list[str]) -> str:
+        """Create a fact ID string matching the Rust implementation."""
+        return f"{pred_type}({','.join(point_names)})"
+
+    def get_new_deductions(self) -> set[Deduction]:
         """
-        Extract newly deduced predicates from the database.
+        Extract newly deduced predicates from the database with provenance.
         Only returns predicates that haven't been extracted before.
 
         Returns:
-            Set of newly deduced Predicate objects
+            Set of newly deduced Deduction objects (predicate + parent predicates)
         """
-        new_predicates = set()
+        # PASS 1: Extract all predicates and build fact_id mappings
+        # This ensures all derived facts are registered before we try to resolve parents
+        all_predicates = {}  # fact_id -> pred
 
-        # Build extractors dynamically from registry
         for pred_name, (pred_class, arity, db_method) in _PREDICATE_REGISTRY.items():
-            # Get the database getter method (e.g., db.get_collinear)
             getter = getattr(self.db, f"get_{db_method}")
             data = getter()
 
             for item in data:
-                pred = self._extract_predicate(pred_class, item)
+                *point_names, derivations = item
+                pred = self._extract_predicate(pred_class, tuple(point_names))
+                fact_id = self._make_fact_id(pred_name, point_names)
+
+                # Store in both temporary dict and persistent mapping
+                all_predicates[fact_id] = pred
+                self._fact_id_to_predicate[fact_id] = pred
+
+        # PASS 2: Build deductions with proper parent references
+        new_deductions = set()
+
+        for pred_name, (pred_class, arity, db_method) in _PREDICATE_REGISTRY.items():
+            getter = getattr(self.db, f"get_{db_method}")
+            data = getter()
+
+            for item in data:
+                *point_names, derivations = item
+                fact_id = self._make_fact_id(pred_name, point_names)
+                pred = all_predicates[fact_id]
+
                 if pred not in self._extracted_predicates:
-                    new_predicates.add(pred)
+                    # Now all parents should be resolvable
+                    parent_predicates = self._build_parent_predicates(derivations)
+
+                    deduction = Deduction(
+                        predicate=pred, parent_predicates=parent_predicates
+                    )
+
+                    new_deductions.add(deduction)
                     self._extracted_predicates.add(pred)
 
-        return new_predicates
+        return new_deductions
 
     def _extract_predicate(
         self, pred_class: type, point_names: tuple[str, ...]
@@ -142,8 +178,35 @@ class DD:
         points = [self.point_by_name[name] for name in point_names]
         return pred_class(*points)
 
+    def _build_parent_predicates(
+        self, derivations: list[tuple[str, list[str]]]
+    ) -> set[Predicate]:
+        """
+        Build the set of parent predicates from derivation information.
 
-def deduce_from_datalog(problem) -> set[Predicate]:
+        Args:
+            derivations: List of (rule_name, parent_fact_ids) tuples
+
+        Returns:
+            Set of parent Predicate objects
+        """
+        parent_predicates = set()
+
+        for rule_name, parent_fact_ids in derivations:
+            for parent_fact_id in parent_fact_ids:
+                if parent_fact_id in self._fact_id_to_predicate:
+                    parent_predicates.add(self._fact_id_to_predicate[parent_fact_id])
+                else:
+                    # This should now be very rare - only for axiom parents
+                    # Log a warning if you want to debug
+                    print(
+                        f"Warning: Missing parent fact {parent_fact_id} for rule {rule_name}"
+                    )
+
+        return parent_predicates
+
+
+def deduce_from_datalog(problem) -> None:
     """
     Run the datalog deductive database and return all newly deduced predicates.
 
@@ -159,7 +222,14 @@ def deduce_from_datalog(problem) -> set[Predicate]:
     problem.dd.run()
 
     # Extract and return new deductions
-    return problem.dd.get_new_deductions()
+    deductions = problem.dd.get_new_deductions()
+
+    # Update the problem with full deduction information
+    for deduction in deductions:
+        problem._add_predicate(deduction.predicate, deduction.parent_predicates)
+
+    # Return just the predicates for backwards compatibility
+    # return {d.predicate for d in deductions}
 
 
 # Export the deduction functions list for the solver

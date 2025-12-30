@@ -72,11 +72,11 @@ def prove(problem: Problem):
 
         # Call each deduction function and collect new predicates
         for deduction_fn in dd.functions:
-            new_predicates = deduction_fn(problem)
+            deduction_fn(problem)
 
             # Add new predicates to the deductions buffer
-            for pred in new_predicates:
-                problem.add_deduction(pred)
+            # for deduction in new_deductions:
+            #     problem.add_deduction(deduction)
 
         if not problem.is_solved():
             problem.search_ar()

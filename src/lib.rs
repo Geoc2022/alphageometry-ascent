@@ -21,38 +21,73 @@ fn same_orientation(l1: Vec<(i64, i64, String)>, l2: Vec<(i64, i64, String)>) ->
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+struct Derivation {
+    rule: String,
+    parents: BTreeSet<String>,
+}
+
+impl Derivation {
+    fn axiom() -> Self {
+        Derivation {
+            rule: "axiom".to_string(),
+            parents: BTreeSet::new(),
+        }
+    }
+
+    fn new(rule: &str, parents: Vec<String>) -> Self {
+        Derivation {
+            rule: rule.to_string(),
+            parents: parents.into_iter().collect(),
+        }
+    }
+}
+
+// Provenance lattice to track all ways a fact was derived
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Provenance {
-    sources: BTreeSet<String>,
+    derivations: BTreeSet<Derivation>,
 }
 
 impl Provenance {
-    fn new(source: &str) -> Self {
-        let mut sources = BTreeSet::new();
-        sources.insert(source.to_string());
-        Provenance { sources }
+    fn axiom() -> Self {
+        let mut derivations = BTreeSet::new();
+        derivations.insert(Derivation::axiom());
+        Provenance { derivations }
     }
 
-    fn axiom() -> Self {
-        Self::new("axiom")
+    fn from_rule(rule: &str, parents: Vec<String>) -> Self {
+        let mut derivations = BTreeSet::new();
+        derivations.insert(Derivation::new(rule, parents));
+        Provenance { derivations }
     }
 }
 
 impl Lattice for Provenance {
     fn meet(self, other: Self) -> Self {
-        let mut sources = self.sources;
-        sources.extend(other.sources);
-        Provenance { sources }
+        let mut derivations = self.derivations;
+        derivations.extend(other.derivations);
+        Provenance { derivations }
     }
 
     fn meet_mut(&mut self, other: Self) -> bool {
-        let old_len = self.sources.len();
-        self.sources.extend(other.sources);
-        self.sources.len() != old_len
+        let old_len = self.derivations.len();
+        self.derivations.extend(other.derivations);
+        self.derivations.len() != old_len
     }
 
     fn join_mut(&mut self, other: Self) -> bool {
         self.meet_mut(other)
     }
+}
+
+fn fact_id(pred_type: &str, args: &[&String]) -> String {
+    let joined = args
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<_>>()
+        .join(",");
+
+    format!("{}({})", pred_type, joined)
 }
 
 #[pyclass]
@@ -234,48 +269,69 @@ impl DeductiveDatabase {
             // Relation Properties (Symmetries)
             // ----------------------------------------------------------------
 
-            col(c, b, a, Provenance::new("symmetry")) <-- col(a, b, c, ?_prov);
-            col(a, c, b, Provenance::new("symmetry")) <-- col(a, b, c, ?_prov);
+            col(c, b, a, Provenance::from_rule("symmetry", vec![fact_id("col", &[&a, &b, &c])]))
+                <-- col(a, b, c, ?_prov);
+            col(a, c, b, Provenance::from_rule("symmetry", vec![fact_id("col", &[&a, &b, &c])]))
+                <-- col(a, b, c, ?_prov);
 
-            para(c, d, a, b, Provenance::new("symmetry")) <-- para(a, b, c, d, ?_prov);
-            para(b, a, c, d, Provenance::new("symmetry")) <-- para(a, b, c, d, ?_prov);
-            para(a, b, d, c, Provenance::new("symmetry")) <-- para(a, b, c, d, ?_prov);
+            para(c, d, a, b, Provenance::from_rule("symmetry", vec![fact_id("para", &[&a, &b, &c, &d])]))
+                <-- para(a, b, c, d, ?_prov);
+            para(b, a, c, d, Provenance::from_rule("symmetry", vec![fact_id("para", &[&a, &b, &c, &d])]))
+                <-- para(a, b, c, d, ?_prov);
+            para(a, b, d, c, Provenance::from_rule("symmetry", vec![fact_id("para", &[&a, &b, &c, &d])]))
+                <-- para(a, b, c, d, ?_prov);
 
-            perp(c, d, a, b, Provenance::new("symmetry")) <-- perp(a, b, c, d, ?_prov);
-            perp(b, a, c, d, Provenance::new("symmetry")) <-- perp(a, b, c, d, ?_prov);
-            perp(a, b, d, c, Provenance::new("symmetry")) <-- perp(a, b, c, d, ?_prov);
+            perp(c, d, a, b, Provenance::from_rule("symmetry", vec![fact_id("perp", &[&a, &b, &c, &d])]))
+                <-- perp(a, b, c, d, ?_prov);
+            perp(b, a, c, d, Provenance::from_rule("symmetry", vec![fact_id("perp", &[&a, &b, &c, &d])]))
+                <-- perp(a, b, c, d, ?_prov);
+            perp(a, b, d, c, Provenance::from_rule("symmetry", vec![fact_id("perp", &[&a, &b, &c, &d])]))
+                <-- perp(a, b, c, d, ?_prov);
 
-            cong(c, d, a, b, Provenance::new("symmetry")) <-- cong(a, b, c, d, ?_prov);
-            cong(b, a, c, d, Provenance::new("symmetry")) <-- cong(a, b, c, d, ?_prov);
-            cong(a, b, d, c, Provenance::new("symmetry")) <-- cong(a, b, c, d, ?_prov);
+            cong(c, d, a, b, Provenance::from_rule("symmetry", vec![fact_id("cong", &[&a, &b, &c, &d])]))
+                <-- cong(a, b, c, d, ?_prov);
+            cong(b, a, c, d, Provenance::from_rule("symmetry", vec![fact_id("cong", &[&a, &b, &c, &d])]))
+                <-- cong(a, b, c, d, ?_prov);
+            cong(a, b, d, c, Provenance::from_rule("symmetry", vec![fact_id("cong", &[&a, &b, &c, &d])]))
+                <-- cong(a, b, c, d, ?_prov);
 
-            eqangle(d, e, f, a, b, c, Provenance::new("symmetry")) <-- eqangle(a, b, c, d, e, f, ?_prov);
-            eqangle(c, b, a, f, e, d, Provenance::new("symmetry")) <-- eqangle(a, b, c, d, e, f, ?_prov);
+            eqangle(d, e, f, a, b, c, Provenance::from_rule("symmetry", vec![fact_id("eqangle", &[&a, &b, &c, &d, &e, &f])]))
+                <-- eqangle(a, b, c, d, e, f, ?_prov);
+            eqangle(c, b, a, f, e, d, Provenance::from_rule("symmetry", vec![fact_id("eqangle", &[&a, &b, &c, &d, &e, &f])]))
+                <-- eqangle(a, b, c, d, e, f, ?_prov);
 
-            cyclic(b, c, d, a, Provenance::new("symmetry")) <-- cyclic(a, b, c, d, ?_prov);
-            cyclic(a, c, b, d, Provenance::new("symmetry")) <-- cyclic(a, b, c, d, ?_prov);
+            cyclic(b, c, d, a, Provenance::from_rule("symmetry", vec![fact_id("cyclic", &[&a, &b, &c, &d])]))
+                <-- cyclic(a, b, c, d, ?_prov);
+            cyclic(a, c, b, d, Provenance::from_rule("symmetry", vec![fact_id("cyclic", &[&a, &b, &c, &d])]))
+                <-- cyclic(a, b, c, d, ?_prov);
 
-            sameclock(d, e, f, a, b, c, Provenance::new("symmetry")) <-- sameclock(a, b, c, d, e, f, ?_prov);
-            sameclock(a, b, c, f, d, e, Provenance::new("symmetry")) <-- sameclock(a, b, c, d, e, f, ?_prov);
-            sameclock(c, b, a, f, e, d, Provenance::new("symmetry")) <-- sameclock(a, b, c, d, e, f, ?_prov);
+            sameclock(d, e, f, a, b, c, Provenance::from_rule("symmetry", vec![fact_id("sameclock", &[&a, &b, &c, &d, &e, &f])]))
+                <-- sameclock(a, b, c, d, e, f, ?_prov);
+            sameclock(a, b, c, f, d, e, Provenance::from_rule("symmetry", vec![fact_id("sameclock", &[&a, &b, &c, &d, &e, &f])]))
+                <-- sameclock(a, b, c, d, e, f, ?_prov);
+            sameclock(c, b, a, f, e, d, Provenance::from_rule("symmetry", vec![fact_id("sameclock", &[&a, &b, &c, &d, &e, &f])]))
+                <-- sameclock(a, b, c, d, e, f, ?_prov);
 
-            eqratio(e, f, g, h, a, b, c, d, Provenance::new("symmetry")) <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
-            eqratio(c, d, a, b, g, h, e, f, Provenance::new("symmetry")) <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
-            eqratio(a, b, e, f, c, d, g, h, Provenance::new("symmetry")) <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
+            eqratio(e, f, g, h, a, b, c, d, Provenance::from_rule("symmetry", vec![fact_id("eqratio", &[&a, &b, &c, &d, &e, &f, &g, &h])]))
+                <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
+            eqratio(c, d, a, b, g, h, e, f, Provenance::from_rule("symmetry", vec![fact_id("eqratio", &[&a, &b, &c, &d, &e, &f, &g, &h])]))
+                <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
+            eqratio(a, b, e, f, c, d, g, h, Provenance::from_rule("symmetry", vec![fact_id("eqratio", &[&a, &b, &c, &d, &e, &f, &g, &h])]))
+                <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
 
             // ----------------------------------------------------------------
             // Trivial Statements
             // ----------------------------------------------------------------
 
-            cong(a, b, a, b, Provenance::new("reflexivity")) <--
+            cong(a, b, a, b, Provenance::from_rule("reflexivity", vec![])) <--
                 point(_, _, a), point(_, _, b),
                 if a != b;
 
-            para(a, b, a, b, Provenance::new("reflexivity")) <--
+            para(a, b, a, b, Provenance::from_rule("reflexivity", vec![])) <--
                 point(_, _, a), point(_, _, b),
                 if a != b;
 
-            eqangle(a, b, c, a, b, c, Provenance::new("reflexivity")) <--
+            eqangle(a, b, c, a, b, c, Provenance::from_rule("reflexivity", vec![])) <--
                 point(_, _, a), point(_, _, b), point(_, _, c),
                 if a != b && a != c && b != c;
 
@@ -283,9 +339,25 @@ impl DeductiveDatabase {
             // Deductive Rules
             // ----------------------------------------------------------------
 
+            // Para Trans
+            para(a, b, e, f, Provenance::from_rule("para_trans", vec![
+                fact_id("para", &[&a, &b, &c, &d]),
+                fact_id("para", &[&c, &d, &e, &f])
+            ])) <--
+                para(a, b, c, d, ?_prov1),
+                para(c, d, e, f, ?_prov2),
+                point(ax, ay, a), point(bx, by, b), point(cx, cy, c), point(dx, dy, d),
+                point(ex, ey, e), point(fx, fy, f),
+                if a != c && a != e && a != f &&
+                   b != c && b != e && b != f &&
+                   c != d && d != e && d != f;
+
             // AA Similarity
-            simtri1(a, b, c, d, e, f, Provenance::new("AA_similarity")) <-- 
-                eqangle(b, a, c, e, d, f, ?_prov1), 
+            simtri1(a, b, c, d, e, f, Provenance::from_rule("AA_similarity", vec![
+                fact_id("eqangle", &[&b, &a, &c, &e, &d, &f]),
+                fact_id("eqangle", &[&b, &c, &a, &e, &f, &d])
+            ])) <--
+                eqangle(b, a, c, e, d, f, ?_prov1),
                 eqangle(b, c, a, e, f, d, ?_prov2),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -294,8 +366,11 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
                 );
 
-            simtri2(a, b, c, d, e, f, Provenance::new("AA_similarity")) <-- 
-                eqangle(b, a, c, f, d, e, ?_prov1), 
+            simtri2(a, b, c, d, e, f, Provenance::from_rule("AA_similarity", vec![
+                fact_id("eqangle", &[&b, &a, &c, &f, &d, &e]),
+                fact_id("eqangle", &[&b, &c, &a, &d, &f, &e])
+            ])) <--
+                eqangle(b, a, c, f, d, e, ?_prov1),
                 eqangle(b, c, a, d, f, e, ?_prov2),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -305,9 +380,13 @@ impl DeductiveDatabase {
                 );
 
             // ASA Congruence
-            contri1(a, b, c, d, e, f, Provenance::new("ASA_congruence")) <-- 
-                eqangle(b, a, c, e, d, f, ?_prov1), 
-                eqangle(c, b, a, f, e, d, ?_prov2), 
+            contri1(a, b, c, d, e, f, Provenance::from_rule("ASA_congruence", vec![
+                fact_id("eqangle", &[&b, &a, &c, &e, &d, &f]),
+                fact_id("eqangle", &[&c, &b, &a, &f, &e, &d]),
+                fact_id("cong", &[&a, &b, &d, &e])
+            ])) <--
+                eqangle(b, a, c, e, d, f, ?_prov1),
+                eqangle(c, b, a, f, e, d, ?_prov2),
                 cong(a, b, d, e, ?_prov3),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -316,9 +395,13 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
                 );
 
-            contri2(a, b, c, d, e, f, Provenance::new("ASA_congruence")) <-- 
-                eqangle(b, a, c, f, d, e, ?_prov1), 
-                eqangle(c, b, a, d, e, f, ?_prov2), 
+            contri2(a, b, c, d, e, f, Provenance::from_rule("ASA_congruence", vec![
+                fact_id("eqangle", &[&b, &a, &c, &f, &d, &e]),
+                fact_id("eqangle", &[&c, &b, &a, &d, &e, &f]),
+                fact_id("cong", &[&a, &b, &d, &e])
+            ])) <--
+                eqangle(b, a, c, f, d, e, ?_prov1),
+                eqangle(c, b, a, d, e, f, ?_prov2),
                 cong(a, b, d, e, ?_prov3),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -328,9 +411,13 @@ impl DeductiveDatabase {
                 );
 
             // SAS Congruence
-            contri1(a, b, c, d, e, f, Provenance::new("SAS_congruence")) <-- 
-                eqangle(b, a, c, e, d, f, ?_prov1), 
-                cong(a, c, d, f, ?_prov2), 
+            contri1(a, b, c, d, e, f, Provenance::from_rule("SAS_congruence", vec![
+                fact_id("eqangle", &[&b, &a, &c, &e, &d, &f]),
+                fact_id("cong", &[&a, &c, &d, &f]),
+                fact_id("cong", &[&a, &b, &d, &e])
+            ])) <--
+                eqangle(b, a, c, e, d, f, ?_prov1),
+                cong(a, c, d, f, ?_prov2),
                 cong(a, b, d, e, ?_prov3),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -339,9 +426,13 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
                 );
 
-            contri2(a, b, c, d, e, f, Provenance::new("SAS_congruence")) <-- 
-                eqangle(b, a, c, f, d, e, ?_prov1), 
-                cong(a, c, d, f, ?_prov2), 
+            contri2(a, b, c, d, e, f, Provenance::from_rule("SAS_congruence", vec![
+                fact_id("eqangle", &[&b, &a, &c, &f, &d, &e]),
+                fact_id("cong", &[&a, &c, &d, &f]),
+                fact_id("cong", &[&a, &b, &d, &e])
+            ])) <--
+                eqangle(b, a, c, f, d, e, ?_prov1),
+                cong(a, c, d, f, ?_prov2),
                 cong(a, b, d, e, ?_prov3),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -351,9 +442,13 @@ impl DeductiveDatabase {
                 );
 
             // SSS Congruence
-            contri1(a, b, c, d, e, f, Provenance::new("SSS_congruence")) <-- 
-                cong(a, c, d, f, ?_prov1), 
-                cong(a, b, d, e, ?_prov2), 
+            contri1(a, b, c, d, e, f, Provenance::from_rule("SSS_congruence", vec![
+                fact_id("cong", &[&a, &c, &d, &f]),
+                fact_id("cong", &[&a, &b, &d, &e]),
+                fact_id("cong", &[&c, &b, &f, &e])
+            ])) <--
+                cong(a, c, d, f, ?_prov1),
+                cong(a, b, d, e, ?_prov2),
                 cong(c, b, f, e, ?_prov3),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -362,9 +457,13 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
                 );
 
-            contri2(a, b, c, d, e, f, Provenance::new("SSS_congruence")) <-- 
-                cong(a, c, d, f, ?_prov1), 
-                cong(a, b, d, e, ?_prov2), 
+            contri2(a, b, c, d, e, f, Provenance::from_rule("SSS_congruence", vec![
+                fact_id("cong", &[&a, &c, &d, &f]),
+                fact_id("cong", &[&a, &b, &d, &e]),
+                fact_id("cong", &[&c, &b, &f, &e])
+            ])) <--
+                cong(a, c, d, f, ?_prov1),
+                cong(a, b, d, e, ?_prov2),
                 cong(c, b, f, e, ?_prov3),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -374,22 +473,32 @@ impl DeductiveDatabase {
                 );
 
             // Right SSA
-            contri1(a, b, c, d, e, f, Provenance::new("right_SSA")) <-- 
-                perp(a, b, a_prime, c, ?_prov1), 
-                perp(d, e, d_prime, f, ?_prov2), 
-                cong(a, b, d, e, ?_prov3), 
+            contri1(a, b, c, d, e, f, Provenance::from_rule("right_SSA", vec![
+                fact_id("perp", &[&a, &b, &a_prime, &c]),
+                fact_id("perp", &[&d, &e, &d_prime, &f]),
+                fact_id("cong", &[&a, &b, &d, &e]),
+                fact_id("cong", &[&b, &c, &e, &f])
+            ])) <--
+                perp(a, b, a_prime, c, ?_prov1),
+                perp(d, e, d_prime, f, ?_prov2),
+                cong(a, b, d, e, ?_prov3),
                 cong(b, c, e, f, ?_prov4),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
                     vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
                     vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
-                );
+            );
 
-            contri2(a, b, c, d, e, f, Provenance::new("right_SSA")) <-- 
-                perp(a, b, a_prime, c, ?_prov1), 
-                perp(d, e, d_prime, f, ?_prov2), 
-                cong(a, b, d, e, ?_prov3), 
+            contri2(a, b, c, d, e, f, Provenance::from_rule("right_SSA", vec![
+                fact_id("perp", &[&a, &b, &a_prime, &c]),
+                fact_id("perp", &[&d, &e, &d_prime, &f]),
+                fact_id("cong", &[&a, &b, &d, &e]),
+                fact_id("cong", &[&b, &c, &e, &f])
+            ])) <--
+                perp(a, b, a_prime, c, ?_prov1),
+                perp(d, e, d_prime, f, ?_prov2),
+                cong(a, b, d, e, ?_prov3),
                 cong(b, c, e, f, ?_prov4),
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
@@ -399,11 +508,17 @@ impl DeductiveDatabase {
                 );
 
             // Inscribed Angle Theorem
-            eqangle(a, b, c, c, b, d, Provenance::new("inscribed_angle_theorem")) <-- 
-                cong(o, a, o_prime, b, ?_prov1), 
-                cong(o, c, o_prime, b, ?_prov2), 
-                cong(o, c, o_prime, a, ?_prov3), 
-                perp(o, b, b_prime, d, ?_prov4), 
+            eqangle(a, b, c, c, b, d, Provenance::from_rule("inscribed_angle_theorem", vec![
+                fact_id("cong", &[&o, &a, &o_prime, &b]),
+                fact_id("cong", &[&o, &c, &o_prime, &b]),
+                fact_id("cong", &[&o, &c, &o_prime, &a]),
+                fact_id("perp", &[&o, &b, &b_prime, &d]),
+                fact_id("eqangle", &[&a, &o, &c, &c_prime, &o, &b])
+            ])) <--
+                cong(o, a, o_prime, b, ?_prov1),
+                cong(o, c, o_prime, b, ?_prov2),
+                cong(o, c, o_prime, a, ?_prov3),
+                perp(o, b, b_prime, d, ?_prov4),
                 eqangle(a, o, c, c_prime, o, b, ?_prov5),
                 if o == o_prime && b == b_prime && c == c_prime &&
                    a != b && a != c && a != d &&
@@ -411,10 +526,15 @@ impl DeductiveDatabase {
                    c != d;
 
             // Diameter Right Angle
-            perp(b, r, r, d, Provenance::new("diameter_right_angle")) <-- 
-                cyclic(b, r, y, d, ?_prov1), 
-                cong(b, o, r, o_prime, ?_prov2), 
-                cong(r, o, d, o_prime, ?_prov3), 
+            perp(b, r, r, d, Provenance::from_rule("diameter_right_angle", vec![
+                fact_id("cyclic", &[&b, &r, &y, &d]),
+                fact_id("cong", &[&b, &o, &r, &o_prime]),
+                fact_id("cong", &[&r, &o, &d, &o_prime]),
+                fact_id("col", &[&b, &o, &d])
+            ])) <--
+                cyclic(b, r, y, d, ?_prov1),
+                cong(b, o, r, o_prime, ?_prov2),
+                cong(r, o, d, o_prime, ?_prov3),
                 col(b, o, d, ?_prov4),
                 if o == o_prime &&
                    b != r && b != y && b != d &&
@@ -465,87 +585,157 @@ impl DeductiveDatabase {
         self.points.clone()
     }
 
-    fn get_col(&self) -> Vec<(String, String, String, Vec<String>)> {
+    fn get_col(&self) -> Vec<(String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_col.iter()
-            .map(|(a, b, c, prov)| (a.clone(), b.clone(), c.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_para(&self) -> Vec<(String, String, String, String, Vec<String>)> {
+    fn get_para(&self) -> Vec<(String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_para.iter()
-            .map(|(a, b, c, d, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_perp(&self) -> Vec<(String, String, String, String, Vec<String>)> {
+    fn get_perp(&self) -> Vec<(String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_perp.iter()
-            .map(|(a, b, c, d, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_cong(&self) -> Vec<(String, String, String, String, Vec<String>)> {
+    fn get_cong(&self) -> Vec<(String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_cong.iter()
-            .map(|(a, b, c, d, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_eqangle(&self) -> Vec<(String, String, String, String, String, String, Vec<String>)> {
+    fn get_eqangle(&self) -> Vec<(String, String, String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_eqangle.iter()
-            .map(|(a, b, c, d, e, f, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, e, f, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_cyclic(&self) -> Vec<(String, String, String, String, Vec<String>)> {
+    fn get_cyclic(&self) -> Vec<(String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_cyclic.iter()
-            .map(|(a, b, c, d, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_sameclock(&self) -> Vec<(String, String, String, String, String, String, Vec<String>)> {
+    fn get_sameclock(&self) -> Vec<(String, String, String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_sameclock.iter()
-            .map(|(a, b, c, d, e, f, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, e, f, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_midp(&self) -> Vec<(String, String, String, Vec<String>)> {
+    fn get_midp(&self) -> Vec<(String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_midp.iter()
-            .map(|(a, b, c, prov)| (a.clone(), b.clone(), c.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_contri1(&self) -> Vec<(String, String, String, String, String, String, Vec<String>)> {
+    fn get_contri1(&self) -> Vec<(String, String, String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_contri1.iter()
-            .map(|(a, b, c, d, e, f, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, e, f, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_contri2(&self) -> Vec<(String, String, String, String, String, String, Vec<String>)> {
+    fn get_contri2(&self) -> Vec<(String, String, String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_contri2.iter()
-            .map(|(a, b, c, d, e, f, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, e, f, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_simtri1(&self) -> Vec<(String, String, String, String, String, String, Vec<String>)> {
+    fn get_simtri1(&self) -> Vec<(String, String, String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_simtri1.iter()
-            .map(|(a, b, c, d, e, f, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, e, f, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_simtri2(&self) -> Vec<(String, String, String, String, String, String, Vec<String>)> {
+    fn get_simtri2(&self) -> Vec<(String, String, String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_simtri2.iter()
-            .map(|(a, b, c, d, e, f, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, e, f, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_eqratio(&self) -> Vec<(String, String, String, String, String, String, String, String, Vec<String>)> {
+    fn get_eqratio(&self) -> Vec<(String, String, String, String, String, String, String, String, Vec<(String, Vec<String>)>)> {
         self.derived_eqratio.iter()
-            .map(|(a, b, c, d, e, f, g, h, prov)| (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), g.clone(), h.clone(), prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, d, e, f, g, h, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), d.clone(), e.clone(), f.clone(), g.clone(), h.clone(), derivations)
+            })
             .collect()
     }
 
-    fn get_aconst(&self) -> Vec<(String, String, String, i32, i32, Vec<String>)> {
+    fn get_aconst(&self) -> Vec<(String, String, String, i32, i32, Vec<(String, Vec<String>)>)> {
         self.derived_aconst.iter()
-            .map(|(a, b, c, m, n, prov)| (a.clone(), b.clone(), c.clone(), *m, *n, prov.sources.iter().cloned().collect()))
+            .map(|(a, b, c, m, n, prov)| {
+                let derivations = prov.derivations.iter()
+                    .map(|d| (d.rule.clone(), d.parents.iter().cloned().collect()))
+                    .collect();
+                (a.clone(), b.clone(), c.clone(), *m, *n, derivations)
+            })
             .collect()
     }
 }

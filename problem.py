@@ -1,15 +1,13 @@
 from relations import (
+    Deduction,
     Predicate,
     Point,
     Cong,
     Para,
     Perp,
     Eqangle,
-    Sameclock,
-    angle_between,
 )
 import itertools
-from math import isclose, pi
 from dd import DD
 from ar import AR
 
@@ -20,56 +18,55 @@ class Problem:
     points: set[Point]
     ar: AR
     dd: DD
+    deductions_buffer: list[Deduction]
     possible_relations: set[Predicate]
     impossible_relations: set[Predicate]
-
-    # Maintain an auxiliary buffer of deductions that can be flushed at a later time.
-    deductions_buffer: list[Predicate]
 
     def __init__(
         self, predicates: set[Predicate], goals: set[Predicate], points: set[Point]
     ):
-        # Import here to avoid circular dependency
-
         self.predicates = {}
         self.goals = goals
         self.points = points
+        self.dd = DD(points, predicates)
         self.ar = AR()
         self.deductions_buffer = []
         self.possible_relations = set()
         self.impossible_relations = set()
 
-        # Initialize the deductive database with points and initial predicates
-        self.dd = DD(points, predicates)
-
-        # Add initial predicates to problem
         for predicate in predicates:
-            self._add_predicate(predicate, set())
+            if predicate.is_valid():
+                self._add_predicate(predicate, set())
+                self.ar.add_predicate(predicate)
+            else:
+                raise ValueError(f"Invalid initial predicate: {predicate}")
 
-    def add_deduction(self, predicate: Predicate):
+    def add_deduction(self, deduction: Deduction):
         """Add a predicate to the deductions buffer."""
-        self.deductions_buffer.append(predicate)
+        self.deductions_buffer.append(deduction)
 
     def flush_deductions(self):
         """Flush the deductions buffer and add predicates to the problem and DD."""
-        for predicate in self.deductions_buffer:
-            interesting = predicate not in self.predicates
-            # Add to AR
-            self.ar.add_predicate(predicate)
+        for deduction in self.deductions_buffer:
+            if deduction.predicate in self.predicates:
+                continue
 
             # Add to DD
-            self.dd.add_predicate(predicate)
-            for subpredicate in predicate.to_sub_data():
+            self.dd.add_predicate(deduction.predicate)
+            for subpredicate in deduction.predicate.to_sub_data():
                 self.dd.add_predicate(subpredicate.predicate)
 
-            # Add to problem predicates (no parent tracking)
-            self._add_predicate(predicate, set())
+            # Add to AR
+            self.ar.add_predicate(deduction.predicate)
 
-            interesting &= len(predicate.data) != 1
-            interesting &= not (isinstance(predicate, Sameclock))
-            if interesting:
-                pass
-                # print(predicate)
+            # Add to problem predicates
+            self._add_predicate(deduction.predicate, deduction.parent_predicates)
+            for subpredicate in deduction.predicate.to_sub_data():
+                if subpredicate.predicate in self.predicates:
+                    continue
+                self._add_predicate(
+                    subpredicate.predicate, subpredicate.parent_predicates
+                )
 
         self.deductions_buffer.clear()
 
@@ -89,7 +86,7 @@ class Problem:
         # AR deduction
         ar_deductions = self.ar.try_deduce(predicate)
         for deduction in ar_deductions:
-            self.add_deduction(deduction.predicate)
+            self.add_deduction(deduction)
         return False
 
     def _add_predicate(self, predicate: Predicate, parent_predicates: set[Predicate]):
@@ -98,6 +95,7 @@ class Problem:
             return
 
         if predicate in self.impossible_relations:
+            print(f"Predicate {predicate} is marked impossible, cannot add.")
             return
         if predicate not in self.possible_relations:
             if predicate.is_valid():
@@ -118,12 +116,10 @@ class Problem:
 
         self.predicates[predicate] = parent_predicates
         for sub_deduction in predicate.to_sub_data():
-            self.predicates[sub_deduction.predicate] = sub_deduction.parent_predicates
-            if sub_deduction.predicate in self.goals:
-                print("\033[92mFound: \033[0m", sub_deduction.predicate)
-
-        if predicate in self.goals:
-            print("\033[92mFound: \033[0m", predicate)
+            if sub_deduction.predicate not in self.predicates:
+                self.predicates[sub_deduction.predicate] = (
+                    sub_deduction.parent_predicates
+                )
 
     def is_solved(self) -> bool:
         # We have solved the problem if all goals are in self.predicates
@@ -152,7 +148,7 @@ class Problem:
             itertools.combinations(self.points, 2), repeat=2
         ):
             cong = Cong(*line1, *line2)
-            if check_possible(cong):
+            if check_possible(cong) and cong not in self.predicates:
                 self.can_deduce(cong)
 
         # Search Para
@@ -160,7 +156,7 @@ class Problem:
             itertools.combinations(self.points, 2), repeat=2
         ):
             para = Para(*line1, *line2)
-            if check_possible(para):
+            if check_possible(para) and para not in self.predicates:
                 self.can_deduce(para)
 
         # Search Perp
@@ -168,7 +164,7 @@ class Problem:
             itertools.combinations(self.points, 2), repeat=2
         ):
             perp = Perp(*line1, *line2)
-            if check_possible(perp):
+            if check_possible(perp) and perp not in self.predicates:
                 self.can_deduce(perp)
 
         # Search Eqangle
@@ -176,53 +172,8 @@ class Problem:
             itertools.permutations(self.points, 3), repeat=2
         ):
             eqangle = Eqangle(*angle1, *angle2)
-            if is_degenerate(eqangle):
-                continue
-            if check_possible(eqangle):
+            if check_possible(eqangle) and eqangle not in self.predicates:
                 self.can_deduce(eqangle)
-
-        # predicates_by_arity = {
-        #     4: [Cong, Para, Perp],  # Para, Perp
-        #     6: [Eqangle],
-        #     # 8: [Eqratio],
-        # }
-        #
-        # for arity, pred_classes in predicates_by_arity.items():
-        #     distinct_points = 2
-        #     if arity % 3 == 0:
-        #         distinct_points = 3
-        #
-        #     def canonical_block(block):
-        #         rotated = block[-1:] + block[:-1]
-        #         names_block = [x.name for x in block]
-        #         names_rotated = [x.name for x in rotated]
-        #         return tuple(block) if names_block <= names_rotated else tuple(rotated)
-        #
-        #     def permissible_combos(items, n, m):
-        #         assert n % m == 0
-        #         k = n // m
-        #         base_blocks = set()
-        #         for block in itertools.product(items, repeat=m):
-        #             names = [x.name for x in block]
-        #             if len(set(names)) != m:
-        #                 continue
-        #             canon = canonical_block(list(block))
-        #             base_blocks.add(canon)
-        #         for chosen in itertools.product(base_blocks, repeat=k):
-        #             flat = [x for block in chosen for x in block]
-        #             yield flat
-        #
-        #     combos = permissible_combos(self.points, arity, distinct_points)
-        #     for pred_class in pred_classes:
-        #         for point_tuple in combos:
-        #             pred = pred_class(*point_tuple)
-        #             if pred in self.predicates:
-        #                 continue
-        #             if is_degenerate(pred):
-        #                 continue
-        #             ar_deductions = self.can_deduce(pred)
-        #             if ar_deductions:
-        #                 self.add_deduction(pred)
 
     def __str__(self) -> str:
         """
@@ -325,129 +276,3 @@ class Problem:
             lines.append(f"[{numbering[predicate]}] {predicate}{parent_refs}")
 
         return "\n".join(lines)
-
-
-# Helpers for constructing minimal predicate list
-
-
-def get_canonical_form(pred_class, point_tuple):
-    """
-    Returns a canonical form of the predicate to eliminate duplicates.
-    This exploits symmetries in the predicate definitions.
-    """
-    if pred_class.__name__ == "Cong":
-        # Cong(A,B,C,D) is symmetric in (A,B) <-> (C,D) and within each pair
-        # Canonical: sorted pairs, then sort the two pairs
-        seg1 = tuple(sorted([point_tuple[0].name, point_tuple[1].name]))
-        seg2 = tuple(sorted([point_tuple[2].name, point_tuple[3].name]))
-        return tuple(sorted([seg1, seg2]))
-
-    elif pred_class.__name__ == "Perp":
-        # Perp(A,B,C,D) is symmetric: AB ⊥ CD = CD ⊥ AB
-        # Also symmetric within each line: AB = BA
-        seg1 = tuple(sorted([point_tuple[0].name, point_tuple[1].name]))
-        seg2 = tuple(sorted([point_tuple[2].name, point_tuple[3].name]))
-        return tuple(sorted([seg1, seg2]))
-
-    elif pred_class.__name__ == "Eqangle":
-        # Eqangle(A,B,C,D,E,F): angle ABC = angle DEF
-        # Symmetries: swap the two angles, reverse each angle
-        angle1 = (point_tuple[0].name, point_tuple[1].name, point_tuple[2].name)
-        angle2 = (point_tuple[3].name, point_tuple[4].name, point_tuple[5].name)
-        angle1_rev = (angle1[2], angle1[1], angle1[0])
-        angle2_rev = (angle2[2], angle2[1], angle2[0])
-
-        # Try all 4 combinations and return the lexicographically smallest
-        options = [
-            tuple(sorted([angle1, angle2])),
-            tuple(sorted([angle1, angle2_rev])),
-            tuple(sorted([angle1_rev, angle2])),
-            tuple(sorted([angle1_rev, angle2_rev])),
-        ]
-        return min(options)
-
-    elif pred_class.__name__ == "Eqratio":
-        # Eqratio(A,B,C,D,E,F,G,H): AB/CD = EF/GH
-        # Symmetries: swap ratios, flip each ratio, swap within segments
-        seg1 = tuple(sorted([point_tuple[0].name, point_tuple[1].name]))
-        seg2 = tuple(sorted([point_tuple[2].name, point_tuple[3].name]))
-        seg3 = tuple(sorted([point_tuple[4].name, point_tuple[5].name]))
-        seg4 = tuple(sorted([point_tuple[6].name, point_tuple[7].name]))
-
-        ratio1 = tuple(sorted([seg1, seg2]))
-        ratio2 = tuple(sorted([seg3, seg4]))
-        return tuple(sorted([ratio1, ratio2]))
-
-    # Default: use point names as-is
-    return tuple(p.name for p in point_tuple)
-
-
-def process_predicate_batch(args):
-    """
-    Process a batch of predicates. This function will be called in parallel.
-    Returns list of (pred, ar_deductions) tuples for successful attempts.
-    """
-    pred_class, point_tuples, ar_instance = args
-    results = []
-
-    for point_tuple in point_tuples:
-        try:
-            pred = pred_class(*point_tuple)
-            ar_deductions = ar_instance.try_deduce(pred)
-            # if len(ar_deductions) == 0:
-            # print(f"Yo something is up {pred}")
-            # Return both the predicate and its deductions
-            results.append((pred, ar_deductions))
-        except Exception:
-            pass
-
-    return results
-
-
-def permissible_combos_optimized(items, n, m, pred_class):
-    """
-    Generates permissible combinations with early deduplication.
-    Uses canonical forms to avoid generating equivalent predicates.
-    """
-    assert n % m == 0
-    k = n // m
-
-    def canonical_block(block):
-        rotated = block[-1:] + block[:-1]
-        names_block = [x.name for x in block]
-        names_rotated = [x.name for x in rotated]
-        return tuple(block) if names_block <= names_rotated else tuple(rotated)
-
-    # Generate base blocks
-    base_blocks = set()
-    for block in itertools.product(items, repeat=m):
-        names = [x.name for x in block]
-        if len(set(names)) != m:
-            continue
-        canon = canonical_block(list(block))
-        base_blocks.add(canon)
-
-    # Generate combinations and deduplicate using canonical forms
-    seen_canonical = set()
-
-    for chosen in itertools.product(base_blocks, repeat=k):
-        flat = [x for block in chosen for x in block]
-
-        # Get canonical form for this predicate
-        canonical = get_canonical_form(pred_class, flat)
-
-        if canonical not in seen_canonical:
-            seen_canonical.add(canonical)
-            yield flat
-
-
-def is_degenerate(pred: Predicate) -> bool:
-    if isinstance(pred, Cong):
-        for seg in pred.data:
-            if len(seg) == 1:
-                return True
-    if isinstance(pred, Eqangle):
-        for angle in pred.data:
-            if isclose(angle_between(*angle) % pi, 0):
-                return True
-    return False
