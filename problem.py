@@ -11,10 +11,10 @@ from relations import (
     # Simtri2,
     # Contri1,
     # Contri2,
-    # Cyclic,
-    # Sameclock,
-    # Midp,
-    # Eqratio,
+    Cyclic,
+    Sameclock,
+    Midp,
+    Eqratio,
     # Aconst,
 )
 import itertools
@@ -148,10 +148,10 @@ class Problem:
             # Simtri2,
             # Contri1,
             # Contri2,
-            # Cyclic,
-            # Sameclock,
-            # Midp,
-            # Eqratio,
+            Cyclic,
+            Sameclock,
+            Midp,
+            Eqratio,
             # Aconst,
         ]
 
