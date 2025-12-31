@@ -53,7 +53,7 @@ impl Provenance {
         Provenance { derivations }
     }
 
-    fn from_rule(rule: &str, parents: Vec<String>) -> Self {
+    fn from(rule: &str, parents: Vec<String>) -> Self {
         let mut derivations = BTreeSet::new();
         derivations.insert(Derivation::new(rule, parents));
         Provenance { derivations }
@@ -264,69 +264,69 @@ impl DeductiveDatabase {
             // Relation Properties (Symmetries)
             // ----------------------------------------------------------------
 
-            col(c, b, a, Provenance::from_rule("sym", vec![fact_id("col", [a, b, c])]))
+            col(c, b, a, Provenance::from("sym", vec![fact_id("col", [a, b, c])]))
                 <-- col(a, b, c, ?_prov);
-            col(a, c, b, Provenance::from_rule("sym", vec![fact_id("col", [a, b, c])]))
+            col(a, c, b, Provenance::from("sym", vec![fact_id("col", [a, b, c])]))
                 <-- col(a, b, c, ?_prov);
 
-            para(c, d, a, b, Provenance::from_rule("sym", vec![fact_id("para", [a, b, c, d])]))
+            para(c, d, a, b, Provenance::from("sym", vec![fact_id("para", [a, b, c, d])]))
                 <-- para(a, b, c, d, ?_prov);
-            para(b, a, c, d, Provenance::from_rule("sym", vec![fact_id("para", [a, b, c, d])]))
+            para(b, a, c, d, Provenance::from("sym", vec![fact_id("para", [a, b, c, d])]))
                 <-- para(a, b, c, d, ?_prov);
-            para(a, b, d, c, Provenance::from_rule("sym", vec![fact_id("para", [a, b, c, d])]))
+            para(a, b, d, c, Provenance::from("sym", vec![fact_id("para", [a, b, c, d])]))
                 <-- para(a, b, c, d, ?_prov);
 
-            perp(c, d, a, b, Provenance::from_rule("sym", vec![fact_id("perp", [a, b, c, d])]))
+            perp(c, d, a, b, Provenance::from("sym", vec![fact_id("perp", [a, b, c, d])]))
                 <-- perp(a, b, c, d, ?_prov);
-            perp(b, a, c, d, Provenance::from_rule("sym", vec![fact_id("perp", [a, b, c, d])]))
+            perp(b, a, c, d, Provenance::from("sym", vec![fact_id("perp", [a, b, c, d])]))
                 <-- perp(a, b, c, d, ?_prov);
-            perp(a, b, d, c, Provenance::from_rule("sym", vec![fact_id("perp", [a, b, c, d])]))
+            perp(a, b, d, c, Provenance::from("sym", vec![fact_id("perp", [a, b, c, d])]))
                 <-- perp(a, b, c, d, ?_prov);
 
-            cong(c, d, a, b, Provenance::from_rule("sym", vec![fact_id("cong", [a, b, c, d])]))
+            cong(c, d, a, b, Provenance::from("sym", vec![fact_id("cong", [a, b, c, d])]))
                 <-- cong(a, b, c, d, ?_prov);
-            cong(b, a, c, d, Provenance::from_rule("sym", vec![fact_id("cong", [a, b, c, d])]))
+            cong(b, a, c, d, Provenance::from("sym", vec![fact_id("cong", [a, b, c, d])]))
                 <-- cong(a, b, c, d, ?_prov);
-            cong(a, b, d, c, Provenance::from_rule("sym", vec![fact_id("cong", [a, b, c, d])]))
+            cong(a, b, d, c, Provenance::from("sym", vec![fact_id("cong", [a, b, c, d])]))
                 <-- cong(a, b, c, d, ?_prov);
 
-            eqangle(d, e, f, a, b, c, Provenance::from_rule("sym", vec![fact_id("eqangle", [a, b, c, d, e, f])]))
+            eqangle(d, e, f, a, b, c, Provenance::from("sym", vec![fact_id("eqangle", [a, b, c, d, e, f])]))
                 <-- eqangle(a, b, c, d, e, f, ?_prov);
-            eqangle(c, b, a, f, e, d, Provenance::from_rule("sym", vec![fact_id("eqangle", [a, b, c, d, e, f])]))
+            eqangle(c, b, a, f, e, d, Provenance::from("sym", vec![fact_id("eqangle", [a, b, c, d, e, f])]))
                 <-- eqangle(a, b, c, d, e, f, ?_prov);
 
-            cyclic(b, c, d, a, Provenance::from_rule("sym", vec![fact_id("cyclic", [a, b, c, d])]))
+            cyclic(b, c, d, a, Provenance::from("sym", vec![fact_id("cyclic", [a, b, c, d])]))
                 <-- cyclic(a, b, c, d, ?_prov);
-            cyclic(a, c, b, d, Provenance::from_rule("sym", vec![fact_id("cyclic", [a, b, c, d])]))
+            cyclic(a, c, b, d, Provenance::from("sym", vec![fact_id("cyclic", [a, b, c, d])]))
                 <-- cyclic(a, b, c, d, ?_prov);
 
-            sameclock(d, e, f, a, b, c, Provenance::from_rule("sym", vec![fact_id("sameclock", [a, b, c, d, e, f])]))
+            sameclock(d, e, f, a, b, c, Provenance::from("sym", vec![fact_id("sameclock", [a, b, c, d, e, f])]))
                 <-- sameclock(a, b, c, d, e, f, ?_prov);
-            sameclock(a, b, c, f, d, e, Provenance::from_rule("sym", vec![fact_id("sameclock", [a, b, c, d, e, f])]))
+            sameclock(a, b, c, f, d, e, Provenance::from("sym", vec![fact_id("sameclock", [a, b, c, d, e, f])]))
                 <-- sameclock(a, b, c, d, e, f, ?_prov);
-            sameclock(c, b, a, f, e, d, Provenance::from_rule("sym", vec![fact_id("sameclock", [a, b, c, d, e, f])]))
+            sameclock(c, b, a, f, e, d, Provenance::from("sym", vec![fact_id("sameclock", [a, b, c, d, e, f])]))
                 <-- sameclock(a, b, c, d, e, f, ?_prov);
 
-            eqratio(e, f, g, h, a, b, c, d, Provenance::from_rule("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
+            eqratio(e, f, g, h, a, b, c, d, Provenance::from("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
                 <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
-            eqratio(c, d, a, b, g, h, e, f, Provenance::from_rule("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
+            eqratio(c, d, a, b, g, h, e, f, Provenance::from("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
                 <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
-            eqratio(a, b, e, f, c, d, g, h, Provenance::from_rule("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
+            eqratio(a, b, e, f, c, d, g, h, Provenance::from("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
                 <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
 
             // ----------------------------------------------------------------
             // Trivial Statements
             // ----------------------------------------------------------------
 
-            cong(a, b, a, b, Provenance::from_rule("rfl", vec![])) <--
+            cong(a, b, a, b, Provenance::from("rfl", vec![])) <--
                 point(_, _, a), point(_, _, b),
                 if a != b;
 
-            para(a, b, a, b, Provenance::from_rule("rfl", vec![])) <--
+            para(a, b, a, b, Provenance::from("rfl", vec![])) <--
                 point(_, _, a), point(_, _, b),
                 if a != b;
 
-            eqangle(a, b, c, a, b, c, Provenance::from_rule("rfl", vec![])) <--
+            eqangle(a, b, c, a, b, c, Provenance::from("rfl", vec![])) <--
                 point(_, _, a), point(_, _, b), point(_, _, c),
                 if a != b && a != c && b != c;
 
@@ -335,7 +335,7 @@ impl DeductiveDatabase {
             // ----------------------------------------------------------------
 
             // Right Angle Equal
-            eqangle(c, b, a, b, e, a, Provenance::from_rule("right_angle_eq", vec![
+            eqangle(c, b, a, b, e, a, Provenance::from("right_angle_eq", vec![
                 fact_id("perp", [a, b, b_prime, c]),
                 fact_id("perp", [a, e, e_prime, b])
             ])) <--
@@ -347,7 +347,7 @@ impl DeductiveDatabase {
                    c != e;
 
             // AA Similarity
-            simtri1(a, b, c, d, e, f, Provenance::from_rule("aa_sim", vec![
+            simtri1(a, b, c, d, e, f, Provenance::from("aa_sim", vec![
                 fact_id("eqangle", [b, a, c, e, d, f]),
                 fact_id("eqangle", [b, c, a, e, f, d])
             ])) <--
@@ -360,7 +360,7 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
-            simtri2(a, b, c, d, e, f, Provenance::from_rule("aa_sim", vec![
+            simtri2(a, b, c, d, e, f, Provenance::from("aa_sim", vec![
                 fact_id("eqangle", [b, a, c, f, d, e]),
                 fact_id("eqangle", [b, c, a, d, f, e])
             ])) <--
@@ -374,7 +374,7 @@ impl DeductiveDatabase {
                 );
 
             // ASA Congruence
-            contri1(a, b, c, d, e, f, Provenance::from_rule("asa_cong", vec![
+            contri1(a, b, c, d, e, f, Provenance::from("asa_cong", vec![
                 fact_id("eqangle", [b, a, c, e, d, f]),
                 fact_id("eqangle", [c, b, a, f, e, d]),
                 fact_id("cong", [a, b, d, e])
@@ -389,7 +389,7 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
-            contri2(a, b, c, d, e, f, Provenance::from_rule("asa_cong", vec![
+            contri2(a, b, c, d, e, f, Provenance::from("asa_cong", vec![
                 fact_id("eqangle", [b, a, c, f, d, e]),
                 fact_id("eqangle", [c, b, a, d, e, f]),
                 fact_id("cong", [a, b, d, e])
@@ -405,7 +405,7 @@ impl DeductiveDatabase {
                 );
 
             // SAS Congruence
-            contri1(a, b, c, d, e, f, Provenance::from_rule("sas_cong", vec![
+            contri1(a, b, c, d, e, f, Provenance::from("sas_cong", vec![
                 fact_id("eqangle", [b, a, c, e, d, f]),
                 fact_id("cong", [a, c, d, f]),
                 fact_id("cong", [a, b, d, e])
@@ -420,7 +420,7 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
-            contri2(a, b, c, d, e, f, Provenance::from_rule("sas_cong", vec![
+            contri2(a, b, c, d, e, f, Provenance::from("sas_cong", vec![
                 fact_id("eqangle", [b, a, c, f, d, e]),
                 fact_id("cong", [a, c, d, f]),
                 fact_id("cong", [a, b, d, e])
@@ -436,7 +436,7 @@ impl DeductiveDatabase {
                 );
 
             // SSS Congruence
-            contri1(a, b, c, d, e, f, Provenance::from_rule("sss_cong", vec![
+            contri1(a, b, c, d, e, f, Provenance::from("sss_cong", vec![
                 fact_id("cong", [a, c, d, f]),
                 fact_id("cong", [a, b, d, e]),
                 fact_id("cong", [c, b, f, e])
@@ -451,7 +451,7 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
-            contri2(a, b, c, d, e, f, Provenance::from_rule("sss_cong", vec![
+            contri2(a, b, c, d, e, f, Provenance::from("sss_cong", vec![
                 fact_id("cong", [a, c, d, f]),
                 fact_id("cong", [a, b, d, e]),
                 fact_id("cong", [c, b, f, e])
@@ -467,7 +467,7 @@ impl DeductiveDatabase {
                 );
 
             // Right SSA Congruence
-            contri1(a, b, c, d, e, f, Provenance::from_rule("ssa_right_cong", vec![
+            contri1(a, b, c, d, e, f, Provenance::from("ssa_right_cong", vec![
                 fact_id("perp", [a, b, a_prime, c]),
                 fact_id("perp", [d, e, d_prime, f]),
                 fact_id("cong", [a, b, d, e]),
@@ -484,7 +484,7 @@ impl DeductiveDatabase {
                     vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
             ) && a == a_prime && d == d_prime;
 
-            contri2(a, b, c, d, e, f, Provenance::from_rule("ssa_right_cong", vec![
+            contri2(a, b, c, d, e, f, Provenance::from("ssa_right_cong", vec![
                 fact_id("perp", [a, b, a_prime, c]),
                 fact_id("perp", [d, e, d_prime, f]),
                 fact_id("cong", [a, b, d, e]),
@@ -502,7 +502,7 @@ impl DeductiveDatabase {
                 ) && a == a_prime && d == d_prime;
 
             // Inscribed Angle Theorem
-            eqangle(a, b, c, c, b, d, Provenance::from_rule("inscribed_angle_thm", vec![
+            eqangle(a, b, c, c, b, d, Provenance::from("inscribed_angle_thm", vec![
                 fact_id("cong", [o, a, o_prime, b]),
                 fact_id("cong", [o, c, o_prime, b]),
                 fact_id("cong", [o, c, o_prime, a]),
@@ -520,7 +520,7 @@ impl DeductiveDatabase {
                    c != d;
 
             // Thales's theorem
-            perp(b, r, r, d, Provenance::from_rule("thales_thm", vec![
+            perp(b, r, r, d, Provenance::from("thales_thm", vec![
                 fact_id("cyclic", [b, r, y, d]),
                 fact_id("cong", [b, o, r, o_prime]),
                 fact_id("cong", [r, o, d, o_prime]),

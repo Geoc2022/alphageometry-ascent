@@ -17,16 +17,16 @@ Each geometric relation (`col`, `para`, etc.) is represented as a lattice in Asc
 The Provenance struct stores all derivations for a fact:
 
 - `axiom()` → a starting fact
-- `from_rule()` → a fact derived from other facts and a rule
+- `from()` → a fact derived from other facts and a rule
 
 Lattices allow combining multiple derivations so that we can keep track of all the ways a fact was derived. We only search for the actual derivation when we trace the proof in `problem.py`.
 
 ### Basic Rule
 
-Here's the symmetry rule for collinearity. `col(c, b, a)` is derived from `col(a, b, c)` using the symmetry property which is recorded in the provenance `Provenance::from_rule("sym", vec![fact_id("col", [a, b, c])])`. We don't care how `col(a, b, c)` was derived, so we have the notation `?_prov` to ignore its provenance.
+Here's the symmetry rule for collinearity. `col(c, b, a)` is derived from `col(a, b, c)` using the symmetry property which is recorded in the provenance `Provenance::from("sym", vec![fact_id("col", [a, b, c])])`. We don't care how `col(a, b, c)` was derived, so we have the notation `?_prov` to ignore its provenance.
 
 ```rust
-col(c, b, a, Provenance::from_rule("sym", vec![fact_id("col", [a, b, c])]))
+col(c, b, a, Provenance::from("sym", vec![fact_id("col", [a, b, c])]))
     <-- col(a, b, c, ?_prov);
 ```
 
@@ -35,7 +35,7 @@ col(c, b, a, Provenance::from_rule("sym", vec![fact_id("col", [a, b, c])]))
 The reflexivity of congruence is derived trivially from point existence, so this fact has no provenance other than the rule name.
 
 ```rust
-cong(a, b, a, b, Provenance::from_rule("rfl", vec![])) <--
+cong(a, b, a, b, Provenance::from("rfl", vec![])) <--
     point(_, _, a), point(_, _, b),
     if a != b;
 ```
@@ -46,7 +46,7 @@ Here's the rule for ASA congruence. For triangles `ABC` and `DEF` to be congruen
 
 ```rust
 // ASA Congruence
-contri1(a, b, c, d, e, f, Provenance::from_rule("asa_cong", vec![
+contri1(a, b, c, d, e, f, Provenance::from("asa_cong", vec![
     fact_id("eqangle", [b, a, c, e, d, f]),
     fact_id("eqangle", [c, b, a, f, e, d]),
     fact_id("cong", [a, b, d, e])
