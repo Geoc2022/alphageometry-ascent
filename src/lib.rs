@@ -339,6 +339,18 @@ impl DeductiveDatabase {
             // Deductive Rules
             // ----------------------------------------------------------------
 
+            // Right Angle Equal
+            eqangle(c, b, a, b, e, a, Provenance::from_rule("right_angle_eq", vec![
+                fact_id("perp", &[&a, &b, &b_prime, &c]),
+                fact_id("perp", &[&a, &e, &e_prime, &b])
+            ])) <--
+                perp(a, b, b_prime, c, ?_prov1),
+                perp(a, e, e_prime, b, ?_prov2),
+                if b == b_prime && e == e_prime &&
+                   a != b && a != c && a != e &&
+                   b != c && b != e &&
+                   c != e;
+
             // AA Similarity
             simtri1(a, b, c, d, e, f, Provenance::from_rule("aa_sim", vec![
                 fact_id("eqangle", &[&b, &a, &c, &e, &d, &f]),
@@ -475,7 +487,7 @@ impl DeductiveDatabase {
                 if same_orientation(
                     vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
                     vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
-            );
+            ) && a == a_prime && d == d_prime;
 
             contri2(a, b, c, d, e, f, Provenance::from_rule("ssa_right_cong", vec![
                 fact_id("perp", &[&a, &b, &a_prime, &c]),
@@ -492,7 +504,7 @@ impl DeductiveDatabase {
                 if same_orientation(
                     vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
                     vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
-                );
+                ) && a == a_prime && d == d_prime;
 
             // Inscribed Angle Theorem
             eqangle(a, b, c, c, b, d, Provenance::from_rule("inscribed_angle_thm", vec![
