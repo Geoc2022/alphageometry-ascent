@@ -42,7 +42,7 @@ class AngleMatrix:
         implicit_deducitons = set()
         for row in b_rows:
             if not row.data:
-                implicit_deducitons.add(Deduction(row.predicate, set(), "AR_trivial"))
+                implicit_deducitons.add(Deduction(row.predicate, set(), "AR_implicit"))
         if implicit_deducitons:
             return implicit_deducitons
 

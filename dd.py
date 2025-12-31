@@ -151,6 +151,8 @@ class DD:
 
                 if pred not in self._extracted_predicates:
                     for rule_name, parent_fact_ids in derivations:
+                        if rule_name == "axiom":
+                            continue
                         parent_predicates = set()
 
                         for parent_fact_id in parent_fact_ids:

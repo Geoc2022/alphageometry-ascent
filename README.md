@@ -61,7 +61,3 @@ contri1(a, b, c, d, e, f, Provenance::from_rule("asa_cong", vec![
         vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
     );
 ```
-
-## TODO
-
-- Some deductions are listed as axioms when they are derived by AR
