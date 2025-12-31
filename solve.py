@@ -56,7 +56,10 @@ def prove(problem: Problem):
 
     print("Initial Predicates:")
     for pred in problem.predicates:
-        print(f"  {pred}")
+        if any(
+            (deduction.rule_name == "axiom") for deduction in problem.predicates[pred]
+        ):
+            print(f"  {pred}")
     print("\nGoals:")
     for goal in problem.goals:
         print(f"  {goal}")
