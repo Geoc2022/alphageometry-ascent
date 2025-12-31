@@ -4,15 +4,12 @@ This repository contains an implementation of Alpha Geometry, a system for devel
 
 This implementation uses [Ascent](https://github.com/s-arash/ascent/tree/master), a logic programming language (similar to Datalog) embedded in Rust, for the deductive database component.
 
-To run all the problems in this repository run:
-
-```bash
-find problems -mindepth 1 -maxdepth 1 -type d | sort | xargs -n1 -I{} bash -c 'echo -e "\n\n==> {}" && python solve.py "{}"'
-```
-
-Alternatively, if you are using uv env, you can run:
+To run all the problems in this repository use [`uv`](https://docs.astral.sh/uv/) to run:
 
 ```bash
 find problems -mindepth 1 -maxdepth 1 -type d | sort | xargs -n1 -I{} bash -c 'echo -e "\n\n==> {}" && uv run solve.py "{}"'
 ```
 
+## TODO
+
+Some deductions are listed as axioms when they are derived by AR
