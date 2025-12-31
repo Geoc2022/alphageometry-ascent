@@ -99,12 +99,14 @@ class Problem:
             self.predicates[predicate] = []
 
         if predicate in self.impossible_relations:
+            # Only errors on zero angles
             # print(f"Predicate {predicate} is marked impossible, cannot add.")
             return
         if predicate not in self.possible_relations:
             if predicate.is_valid():
                 self.possible_relations.add(predicate)
             else:
+                # Only errors on zero angles
                 # print(f"Predicate {predicate} is invalid, marking as impossible.")
                 self.impossible_relations.add(predicate)
                 return
