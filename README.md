@@ -4,6 +4,45 @@ This repository contains an implementation of Alpha Geometry, a system for devel
 
 This implementation uses [Ascent](https://github.com/s-arash/ascent/tree/master), a logic programming language (similar to Datalog) embedded in Rust, for the deductive database component.
 
+## Example Problem
+
+```bash
+❯ uv run solve.py problems/contri_sas
+Initial Predicates:
+  cong C A I G
+  eqangle C A B F D E
+  cong A B G H
+  cong C A F D
+  eqangle C A B H G I
+  cong A B D E
+
+Goals:
+  contri2 A B C G H I
+  contri1 A B C D E F
+
+=== Iteration 1 ===
+Predicates known: 6 / Goals Known: 0 / Goals: 2
+Missing Goals:  contri2 A B C G H I contri1 A B C D E F
+Found: contri1 D E F A B C via sas_cong
+Found: contri2 A B C G H I via sas_cong
+Added 2020 new predicates
+
+============================================================
+[1] cong C A I G                | axiom
+[2] eqangle C A B F D E         | axiom
+[3] cong A B G H                | axiom
+[4] cong C A F D                | axiom
+[5] eqangle C A B H G I         | axiom
+[6] cong A B D E                | axiom
+[7] eqangle B A C E D F         | sym [2]
+[8] eqangle B A C I G H         | sym [5]
+[9] contri1 A C B D F E         | sas_cong [2],[4],[6]
+[10] contri2 G H I A B C        | sas_cong [3],[5],[1]
+[11] contri1 D E F A B C        | sas_cong [7],[4],[6]
+[12] contri2 A B C G H I        | sas_cong [3],[1],[8]
+Solved!
+```
+
 To run all the problems in this repository use [`uv`](https://docs.astral.sh/uv/) to run:
 
 ```bash
