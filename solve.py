@@ -64,9 +64,13 @@ def prove(problem: Problem):
     while changed and not problem.is_solved() and iteration < max_iterations:
         iteration += 1
         print(f"\n=== Iteration {iteration} ===")
+        missing_goals = [
+            goal for goal in problem.goals if goal not in problem.predicates
+        ]
         print(
-            f"Predicates known: {len(problem.predicates)} / Goals: {len(problem.goals)}"
+            f"Predicates known: {len(problem.predicates)} / Goals Known: {len(problem.goals) - len(missing_goals)} / Goals: {len(problem.goals)}"
         )
+        print("Missing Goals: ", " ".join(str(goal) for goal in missing_goals))
 
         previous_count = len(problem.predicates)
 
