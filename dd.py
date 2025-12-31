@@ -94,6 +94,8 @@ class DD:
         _, expected_arity, db_method = _PREDICATE_REGISTRY[pred_type]
 
         if len(predicate._init_args) == expected_arity:
+            # TODO: Make this extendable to predicates like Aconst which have nonpoint inputs
+
             # Extract point names from the init args
             point_names = [pt.name for pt in predicate._init_args]
             # Get the database method (e.g., db.add_collinear)
