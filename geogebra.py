@@ -110,7 +110,7 @@ def parse_ggb_file(ggb_filename):
     if not os.path.exists(xml_path):
         raise FileNotFoundError("No geogebra.xml found inside the .ggb archive.")
 
-    print(xml_path)
+    # print(xml_path)
 
     tree = ET.parse(xml_path)
     root = tree.getroot()
