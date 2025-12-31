@@ -7,17 +7,15 @@ use std::collections::BTreeSet;
 fn same_orientation(l1: Vec<(i64, i64, String)>, l2: Vec<(i64, i64, String)>) -> bool {
     let edge_length = |p: (i64, i64, String), q: (i64, i64, String)| (q.0 - p.0) * (q.1 + p.1);
 
-    let mut area1 = 0;
-    for i in 0..l1.len() {
-        area1 += edge_length(l1[i].clone(), l1[(i + 1) % l1.len()].clone());
-    }
+    let area1: i64 = (0..l1.len())
+        .map(|i| edge_length(l1[i].clone(), l1[(i + 1) % l1.len()].clone()))
+        .sum();
 
-    let mut area2 = 0;
-    for i in 0..l2.len() {
-        area2 += edge_length(l2[i].clone(), l2[(i + 1) % l2.len()].clone());
-    }
+    let area2: i64 = (0..l2.len())
+        .map(|i| edge_length(l2[i].clone(), l2[(i + 1) % l2.len()].clone()))
+        .sum();
 
-    return (area1 * area2) > 0;
+    (area1 * area2) > 0
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
