@@ -4,8 +4,8 @@ use ascent::ascent;
 use ascent::Lattice;
 use std::collections::BTreeSet;
 
-fn same_orientation(l1: Vec<(i64, i64, String)>, l2: Vec<(i64, i64, String)>) -> bool {
-    let edge_length = |p: (i64, i64, String), q: (i64, i64, String)| (q.0 - p.0) * (q.1 + p.1);
+fn same_orientation(l1: Vec<(i64, i64)>, l2: Vec<(i64, i64)>) -> bool {
+    let edge_length = |p: (i64, i64), q: (i64, i64)| (q.0 - p.0) * (q.1 + p.1);
 
     let area1: i64 = (0..l1.len())
         .map(|i| edge_length(l1[i].clone(), l1[(i + 1) % l1.len()].clone()))
@@ -356,8 +356,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
             simtri2(a, b, c, d, e, f, Provenance::from_rule("aa_sim", vec![
@@ -369,8 +369,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*fx, *fy), (*ex, *ey), (*dx, *dy)]
                 );
 
             // ASA Congruence
@@ -385,8 +385,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
             contri2(a, b, c, d, e, f, Provenance::from_rule("asa_cong", vec![
@@ -400,8 +400,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*fx, *fy), (*ex, *ey), (*dx, *dy)]
                 );
 
             // SAS Congruence
@@ -416,8 +416,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
             contri2(a, b, c, d, e, f, Provenance::from_rule("sas_cong", vec![
@@ -431,8 +431,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*fx, *fy), (*ex, *ey), (*dx, *dy)]
                 );
 
             // SSS Congruence
@@ -447,8 +447,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
                 );
 
             contri2(a, b, c, d, e, f, Provenance::from_rule("sss_cong", vec![
@@ -462,8 +462,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*fx, *fy), (*ex, *ey), (*dx, *dy)]
                 );
 
             // Right SSA Congruence
@@ -480,8 +480,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*dx, *dy, d.clone()), (*ex, *ey, e.clone()), (*fx, *fy, f.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
             ) && a == a_prime && d == d_prime;
 
             contri2(a, b, c, d, e, f, Provenance::from_rule("ssa_right_cong", vec![
@@ -497,8 +497,8 @@ impl DeductiveDatabase {
                 point(ax, ay, a), point(bx, by, b), point(cx, cy, c),
                 point(dx, dy, d), point(ex, ey, e), point(fx, fy, f),
                 if same_orientation(
-                    vec![(*ax, *ay, a.clone()), (*bx, *by, b.clone()), (*cx, *cy, c.clone())],
-                    vec![(*fx, *fy, f.clone()), (*ex, *ey, e.clone()), (*dx, *dy, d.clone())]
+                    vec![(*ax, *ay), (*bx, *by), (*cx, *cy)],
+                    vec![(*fx, *fy), (*ex, *ey), (*dx, *dy)]
                 ) && a == a_prime && d == d_prime;
 
             // Inscribed Angle Theorem
