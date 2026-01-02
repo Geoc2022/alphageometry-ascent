@@ -534,6 +534,21 @@ impl DeductiveDatabase {
                    b != r && b != y && b != d &&
                    r != y && r != d &&
                    y != d;
+
+            // Eqratio is Additive
+            eqratio(a, m, b, n, m, c, n, d, Provenance::from("eqratio_additive", vec![
+                fact_id("eqratio", [a, c, m, c, b, d, n, d]),
+                fact_id("col", [a, m, c]),
+                fact_id("col", [b, n, d])
+            ])) <--
+                eqratio(a, c, m, c_prime, b, d, n, d_prime, ?_prov1),
+                col(a, m, c, ?_prov2),
+                col(b, n, c, ?_prov3),
+                if a != b && a != c && a != m &&
+                   b != c && b != n &&
+                   c != m && c != n &&
+                   m != n &&
+                   c == c_prime && d == d_prime;
         }
 
         let mut prog = AscentProgram::default();
