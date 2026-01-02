@@ -307,6 +307,8 @@ impl DeductiveDatabase {
             sameclock(c, b, a, f, e, d, Provenance::from("sym", vec![fact_id("sameclock", [a, b, c, d, e, f])]))
                 <-- sameclock(a, b, c, d, e, f, ?_prov);
 
+            eqratio(b, a, c, d, e, f, g, h, Provenance::from("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
+                <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
             eqratio(e, f, g, h, a, b, c, d, Provenance::from("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
                 <-- eqratio(a, b, c, d, e, f, g, h, ?_prov);
             eqratio(c, d, a, b, g, h, e, f, Provenance::from("sym", vec![fact_id("eqratio", [a, b, c, d, e, f, g, h])]))
@@ -534,6 +536,35 @@ impl DeductiveDatabase {
                    b != r && b != y && b != d &&
                    r != y && r != d &&
                    y != d;
+
+            // Eqratio is Additive
+            eqratio(a, m, b, n, m, c, n, d, Provenance::from("eqratio_additive", vec![
+                fact_id("eqratio", [a, c, m, c, b, d, n, d]),
+                fact_id("col", [a, m, c]),
+                fact_id("col", [b, n, d])
+            ])) <--
+                eqratio(a, c, m, c_prime, b, d, n, d_prime, ?_prov1),
+                col(a, m, c, ?_prov2),
+                col(b, n, d, ?_prov3),
+                if a != m && a != c &&
+                   m != c &&
+                   b != n && b != d &&
+                   n != d &&
+                   c == c_prime && d == d_prime;
+
+            eqratio(a, c, m, c, b, d, n, d, Provenance::from("eqratio_additive", vec![
+                fact_id("eqratio", [a, m, b, n, m, c, n, d]),
+                fact_id("col", [a, m, c]),
+                fact_id("col", [b, n, d])
+            ])) <--
+                eqratio(a, m, b, n, m_prime, c, n_prime, d, ?_prov1),
+                col(a, m, c, ?_prov2),
+                col(b, n, d, ?_prov3),
+                if a != m && a != c &&
+                   m != c &&
+                   b != n && b != d &&
+                   n != d &&
+                   m == m_prime && n == n_prime;
         }
 
         let mut prog = AscentProgram::default();

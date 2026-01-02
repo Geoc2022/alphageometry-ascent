@@ -639,15 +639,18 @@ class Eqratio(Predicate):
             return []
         l0a, l0b = list(self.data)[0]
         l1a, l1b = list(self.data)[1]
+        if l0a == l0b and l1a == l1b:
+            return []
+
+        data = {}
+        data[l0a] = data.get(l0a, 0) + 1
+        data[l0b] = data.get(l0b, 0) - 1
+        data[l1a] = data.get(l1a, 0) - 1
+        data[l1b] = data.get(l1b, 0) + 1
         return [
             RatioRow(
                 predicate=self,
-                data={
-                    l0a: 1,
-                    l0b: -1,
-                    l1a: -1,
-                    l1b: 1,
-                },
+                data=data,
             )
         ]
 
