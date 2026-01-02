@@ -1,4 +1,6 @@
+# solve.py
 import sys
+import os
 import read_in_relations
 import geogebra
 import constructions
@@ -10,39 +12,55 @@ from relations import Point
 def construct_problem(
     ggb_file: str = "",
     problem_file: str = "",
-    problem_str: str = "",
     plot: bool = False,
 ) -> Problem:
     """
     Construct a geometry problem either from:
-      - manual mode (problem_str provided), or
-      - file mode (ggb_file + problem_file).
+      - file mode (ggb_file + problem_file), or
+      - manual mode (no ggb file -> points + predicates are taken from txt,
+        with missing points defaulting to (0,0)).
     """
-    if problem_str:
-        points = {}
-        for section in problem_str.split(";"):
-            section = section.strip()
-            if not section:
-                continue
-            tokens = section.split()
-            for token in tokens[1:]:
-                if token.isalpha():
-                    points[token] = (0.0, 0.0)  # dummy coords
 
-        predicates, goals = read_in_relations.parse_string(problem_str, points)
+    use_geogebra = bool(ggb_file) and os.path.isfile(ggb_file)
 
-    else:
+    if use_geogebra:
         points, lines, circles = geogebra.parse_picture(ggb_file)
 
         if plot:
             constructions.plot(points, lines, circles)
 
         with open(problem_file, "r") as f:
-            predicates, goals = read_in_relations.parse_string(f.read(), points)
+            txt = f.read()
+        predicates, goals = read_in_relations.parse_string(
+            txt, points=points, allow_dummy_points=False
+        )
 
-    points = {Point(name=k, x=v[0], y=v[1]) for k, v in points.items()}
+    else:
+        # Manual mode
+        if not problem_file:
+            raise ValueError("No ggb file found and no problem_file specified.")
+        with open(problem_file, "r") as f:
+            txt = f.read()
 
-    return Problem(set(predicates), set(goals), points)
+        predicates, goals = read_in_relations.parse_string(
+            txt, points=None, allow_dummy_points=True
+        )
+        parsed_points, _ = read_in_relations.parse_points_and_predicates(txt)
+
+        points = dict(parsed_points)
+        for pred in list(predicates) + list(goals):
+            if not hasattr(pred, "_init_args"):
+                continue
+            if not pred._init_args:
+                continue
+            for p in pred._init_args:
+                if not isinstance(p, Point):
+                    continue
+                if p.name not in points:
+                    points[p.name] = (0.0, 0.0)
+
+    points_objs = {Point(name=k, x=v[0], y=v[1]) for k, v in points.items()}
+    return Problem(set(predicates), set(goals), points_objs)
 
 
 def prove(problem: Problem):
@@ -108,29 +126,18 @@ def main():
     if not args:
         print("Usage:")
         print("  python solve.py <problem_directory> [--plot]")
-        print('  python solve.py -manual "<problem_string>"')
         sys.exit(1)
 
     plot_flag = "--plot" in args
+    args = [a for a in args if a != "--plot"]
 
-    if "-manual" in args:
-        try:
-            idx = args.index("-manual")
-            problem_str = args[idx + 1]
-        except IndexError:
-            print("Error: You must provide a problem string after -manual.")
-            sys.exit(1)
+    problem_dir = args[0]
+    ggb_file = f"{problem_dir}/problem.ggb"
+    problem_file = f"{problem_dir}/problem.txt"
 
-        problem = construct_problem(problem_str=problem_str, plot=False)
-
-    else:
-        problem_dir = args[0]
-        ggb_file = f"{problem_dir}/problem.ggb"
-        problem_file = f"{problem_dir}/problem.txt"
-
-        problem = construct_problem(
-            ggb_file=ggb_file, problem_file=problem_file, plot=plot_flag
-        )
+    problem = construct_problem(
+        ggb_file=ggb_file, problem_file=problem_file, plot=plot_flag
+    )
 
     prove(problem)
 
