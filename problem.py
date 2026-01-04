@@ -270,17 +270,14 @@ class Problem:
                     used_predicates.add(predicate)
                     ordered_predicates.append((predicate, best))
 
-        # Build output
+        # Build full output
         numbering: dict[Predicate, int] = {}
         for i, (predicate, _) in enumerate(ordered_predicates):
             numbering[predicate] = i + 1
 
-        lines = []
-
-        for predicate, deduction in ordered_predicates:
-            num = numbering[predicate]
+        def format_line(num: int, predicate, deduction) -> str:
             padded_pred = f"{str(predicate):<25}"
-            pred = (
+            pred_str = (
                 padded_pred
                 if predicate not in self.goals
                 else f"\x1b[32m{padded_pred}\x1b[0m"
@@ -290,10 +287,68 @@ class Problem:
                 if not deduction.parent_predicates
                 else ",".join(f"[{numbering[p]}]" for p in deduction.parent_predicates)
             )
-
             rule = f"{deduction.rule_name}" if deduction.rule_name != "unknown" else ""
-            line = f"[{num}] {pred}\t| {rule} {parents}"
+            return f"[{num}] {pred_str}\t| {rule} {parents}"
 
-            lines.append(line)
+        # Full proof lines (as you already do)
+        full_lines = []
+        for predicate, deduction in ordered_predicates:
+            num = numbering[predicate]
+            full_lines.append(format_line(num, predicate, deduction))
 
-        return "\n".join(lines)
+        # ---------- Shortened proof construction ----------
+
+        by_num = {numbering[p]: (p, d) for p, d in ordered_predicates}
+
+        def collect_needed_lines_for_goal(goal_pred):
+            """
+            Starting from goal_pred, walk backwards through selected_derivations
+            and collect all line numbers needed for that goal.
+            """
+            needed = set()
+            stack = [goal_pred]
+
+            while stack:
+                current = stack.pop()
+                if current not in selected_derivations:
+                    continue
+                if current not in numbering:
+                    continue
+
+                line_no = numbering[current]
+                if line_no in needed:
+                    continue
+
+                needed.add(line_no)
+
+                deduction = selected_derivations[current]
+                for parent in deduction.parent_predicates:
+                    if parent in numbering:  # has a line
+                        stack.append(parent)
+
+            return needed
+
+        # For each goal, build a minimal proof
+        short_proofs_sections = []
+        for goal in self.goals:
+            if goal not in numbering:
+                continue
+
+            needed_lines = collect_needed_lines_for_goal(goal)
+            ordered_needed = sorted(needed_lines)
+
+            header = f"\n\n=== Proof for goal: {goal} ==="
+            lines = [header]
+            for ln in ordered_needed:
+                predicate, deduction = by_num[ln]
+                lines.append(format_line(ln, predicate, deduction))
+
+            short_proofs_sections.append("\n".join(lines))
+
+        output = []
+        # output.append("=== Full proof ===")
+        # output.append("\n".join(full_lines))
+        if short_proofs_sections:
+            output.append("\n".join(short_proofs_sections))
+
+        return "\n".join(output)
