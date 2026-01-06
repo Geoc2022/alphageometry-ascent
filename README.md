@@ -51,14 +51,14 @@ find problems -mindepth 1 -maxdepth 1 -type d | sort | xargs -n1 -I{} bash -c 'e
 
 ## Deductive Database
 
-Each geometric relation (`col`, `para`, etc.) is represented as a lattice in Ascent, containing the fact and provenance i.e. how it was derived. 
+Each geometric fact (`col`, `para`, etc.) is represented as a relation in Ascent, containing the fact and provenance lattice i.e. how it was derived. 
 
-The Provenance struct stores all derivations for a fact:
+The Provenance stores all derivations for a fact:
 
 - `axiom()` → a starting fact
 - `from()` → a fact derived from other facts and a rule
 
-Lattices allow combining multiple derivations so that we can keep track of all the ways a fact was derived. We only search for the actual derivation when we trace the proof in `problem.py`.
+Lattices allow combining multiple derivations so that we can keep track of all the ways a fact was derived. We only search for the actual derivation used in the proof when we trace the proof in `problem.py`.
 
 ### Basic Rule
 
