@@ -11,13 +11,12 @@ from relations import (
     # Simtri2,
     # Contri1,
     # Contri2,
-    Cyclic,
-    Sameclock,
-    Midp,
+    # Cyclic,
+    # Sameclock,
+    # Midp,
     Eqratio,
     # Aconst,
 )
-import itertools
 from dd import DD
 from ar import AR
 
@@ -145,14 +144,14 @@ class Problem:
             Para,
             Perp,
             Eqangle,
-            # Col,
+            # Col,    # omitted for speed
             # Simtri1,
             # Simtri2,
             # Contri1,
             # Contri2,
-            Cyclic,
-            Sameclock,
-            Midp,
+            # Cyclic,
+            # Sameclock,
+            # Midp,
             Eqratio,
             # Aconst,
         ]
