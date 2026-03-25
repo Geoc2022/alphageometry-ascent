@@ -100,3 +100,14 @@ contri1(a, b, c, d, e, f, Provenance::from("asa_cong", vec![
         vec![(*dx, *dy), (*ex, *ey), (*fx, *fy)]
     );
 ```
+
+## Algebraic Reasoning
+
+The AR component uses Gaussian elimination to check whether angle or distance facts follow algebraically from known facts.
+
+Angles and log-distances are represented as linear combinations over a set of free variables (one per line direction or segment length). Known facts are fed in as constraints via `force_zero` / `force_one`; a candidate relation is checked by simplifying its linear combination and testing whether it reduces to zero / one in linear / log space.
+
+This implementation uses an unchanged [elimination.py](https://github.com/google-deepmind/alphageometry2/blob/main/elimination.py) from [AlphaGeometry 2](https://www.jmlr.org/papers/v26/25-1654.html).
+See that file for the original copyright notice (Google LLC, Apache 2.0).
+
+The file `ar.py` in this repo bridges the predicate's algebraic representations to the `ElimAngle` and `ElimDistMul` in `elimination.py`. Note that the AR component using the elimination module can't give a proof trace.
