@@ -5,7 +5,7 @@ import functools
 import itertools
 import inspect
 from math import atan2, pi, isclose
-
+from fractions import Fraction
 
 def str_init_args(init):
     """
@@ -86,8 +86,8 @@ Row = TypeVar("Row")
 @dataclass
 class AngleRow:
     predicate: Predicate
-    constant: float = 0.0  # constant coefficient
-    data: dict[frozenset[Point], float] = field(default_factory=dict)
+    constant: Fraction = Fraction(0)  # constant coefficient
+    data: dict[frozenset[Point], Fraction] = field(default_factory=dict)
 
     def __str__(self) -> str:
         res = []
@@ -108,7 +108,7 @@ class AngleRow:
 @dataclass
 class RatioRow:
     predicate: Predicate
-    data: dict[frozenset[Point], float] = field(default_factory=dict)
+    data: dict[frozenset[Point], Fraction] = field(default_factory=dict)
 
     def __str__(self) -> str:
         res = []
@@ -257,8 +257,8 @@ class Perp(Predicate):
         return [
             AngleRow(
                 predicate=self,
-                data={list(self.data)[0]: 1, list(self.data)[1]: 1},
-                constant=1 / 2,
+                data={list(self.data)[0]: Fraction(1), list(self.data)[1]: Fraction(1)},
+                constant=Fraction(1, 2),
             )
         ]
 
@@ -299,7 +299,7 @@ class Cong(Predicate):
             return [RatioRow(predicate=self, data={})]
         return [
             RatioRow(
-                predicate=self, data={list(self.data)[0]: 1, list(self.data)[1]: -1}
+                predicate=self, data={list(self.data)[0]: Fraction(1), list(self.data)[1]: Fraction(-1)}
             )
         ]
 
@@ -458,7 +458,7 @@ class Para(Predicate):
             return [AngleRow(predicate=self, data={})]
         return [
             AngleRow(
-                predicate=self, data={list(self.data)[0]: 1, list(self.data)[1]: -1}
+                predicate=self, data={list(self.data)[0]: Fraction(1), list(self.data)[1]: Fraction(-1)}
             )
         ]
 
@@ -696,8 +696,8 @@ class Aconst(Predicate):
         return [
             AngleRow(
                 predicate=self,
-                data={lines[0]: 1, lines[1]: -1},
-                constant=self.data[3] / (self.data[4] * 2),
+                data={lines[0]: Fraction(1), lines[1]: Fraction(-1)},
+                constant=Fraction(self.data[3], self.data[4]),
             )
         ]
 

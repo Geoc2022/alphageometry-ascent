@@ -1,259 +1,237 @@
-from typing import Optional, TypeVar
-from relations import Eqratio, Predicate, Deduction, AngleRow, RatioRow, Point
-import numpy as np
+from relations import (
+    Predicate,
+    Deduction,
+    AngleRow,
+    RatioRow,
+    Point,
+)
 
-ColName = TypeVar("ColName")
+from elimination import (
+    ElimLHS,
+    LinComb,
+    ElimAngle,
+    ElimDistMul,
+    FormalAngle,
+    DistMul,
+    angle_unit,
+    ATOM
+)
 
-TOLERANCE = 1e-9
 
-
-def is_in_row_span(A: np.ndarray, b: np.ndarray) -> Optional[np.ndarray]:
+class LineVar:
     """
-    Check if b is in the row span of A.
-    Return coefficients x such that x @ A = b if possible, else None.
+    Registers a canonical ElimLHS per unordered pair of points (a "line direction").
     """
-    b = np.asarray(b, dtype=float)
-    if b.ndim != 1:
-        raise ValueError("b must be a 1D row vector")
+    _registry: dict[frozenset[Point], ElimLHS] = {}
 
-    try:
-        if np.linalg.matrix_rank(A) < np.linalg.matrix_rank(np.vstack([A, b])):
-            return None  # rank increased → not in span
-    except Exception:
-        return None
+    @classmethod
+    def get(cls, line: frozenset[Point], numeric_direction: float) -> ElimLHS:
+        if line not in cls._registry:
+            name = "".join(sorted(p.name for p in line))
+            cls._registry[line] = ElimLHS(numeric_direction, f"σ({name})")
+        return cls._registry[line]
 
-    x = np.linalg.pinv(A.T) @ b
-    return x
-
-
-def minimize_parents(
-    A: np.ndarray,
-    b: np.ndarray,
-    x: np.ndarray,
-    PARENT_TOL: float = TOLERANCE,
-) -> np.ndarray:
-    active_indices = [i for i in range(x.shape[0]) if np.abs(x[i]) > PARENT_TOL]
-
-    used = np.zeros(x.shape[0], dtype=bool)
-    used[active_indices] = True
-
-    for i in active_indices:
-        if not used[i]:
-            continue
-
-        mask = used.copy()
-        mask[i] = False
-        if not np.any(mask):
-            continue
-
-        A_reduced = A[mask, :]
-
-        x_reduced = is_in_row_span(A_reduced, b)
-        if x_reduced is not None:
-            used[i] = False
-            x_new = np.zeros_like(x)
-            x_new[mask] = x_reduced
-            x = x_new
-
-    return x
+    @classmethod
+    def reset(cls):
+        cls._registry.clear()
 
 
-class AngleMatrix:
-    rows: list[AngleRow]
+class SegVar:
+    """
+    Registers a canonical ElimLHS per unordered pair of points (a "segment length").
+    """
+    _registry: dict[frozenset[Point], ElimLHS] = {}
 
-    def __init__(self) -> None:
-        self.rows = []
+    @classmethod
+    def get(cls, seg: frozenset[Point], numeric_length: float) -> ElimLHS:
+        if seg not in cls._registry:
+            name = "".join(sorted(p.name for p in seg))
+            cls._registry[seg] = ElimLHS(numeric_length, f"|{name}|")
+        return cls._registry[seg]
+
+    @classmethod
+    def reset(cls):
+        cls._registry.clear()
+
+
+def _numeric_direction(line: frozenset[Point]) -> float:
+    """Direction of a line (pair of points) in [0,1)."""
+    pts = list(line)
+    if len(pts) < 2:
+        return 0.0
+    a, b = pts[0], pts[1]
+    import math as _math
+    return (_math.atan2(b.y - a.y, b.x - a.x) / _math.pi) % 1.0
+
+
+def _numeric_length(seg: frozenset[Point]) -> float:
+    pts = list(seg)
+    if len(pts) < 2:
+        return 0.0
+    a, b = pts[0], pts[1]
+    return ((b.x - a.x)**2 + (b.y - a.y)**2) ** 0.5
+
+
+def _angle_row_to_formal(row: AngleRow) -> FormalAngle:
+    comb = LinComb.zero()
+    for line, coef in row.data.items():
+        num_dir = _numeric_direction(line)
+        var = LineVar.get(line, num_dir)
+        comb.iadd_mul(LinComb.singleton(var), coef)
+    if row.constant:
+        comb.iadd_mul(LinComb.singleton(angle_unit), -row.constant)
+    return FormalAngle(comb)
+
+
+def _ratio_row_to_formal(row: RatioRow) -> DistMul:
+    comb = LinComb.zero()
+    for seg, coef in row.data.items():
+        num_len = _numeric_length(seg)
+        var = SegVar.get(seg, num_len)
+        comb.iadd_mul(LinComb.singleton(var), coef)
+    return DistMul(comb)
+
+
+class ElimAngleAR:
+    def __init__(self):
+        self.elim = ElimAngle()
+        # track which predicates we have already forced
+        self._forced: set[int] = set()
 
     def add_predicate(self, predicate: Predicate) -> None:
-        self.rows.extend(predicate.to_angle_rows())
+        rows: list[AngleRow] = predicate.to_angle_rows()
+        for row in rows:
+            if not row.data:
+                continue
+            angle = _angle_row_to_formal(row)
+            # Check numerical validity before forcing with Cyclic
+            if abs((angle.value + 0.5) % 1 - 0.5) ** 2 >= ATOM:
+                continue
+            # force_zero asserts this combination equals zero (mod π)
+            self.elim.force_zero(angle, sources={predicate})
 
-    # try_deduce will return a set of deductions that may be helpful to deduce the given predicate in DD
     def try_deduce(self, predicate: Predicate) -> set[Deduction]:
-        b_rows: list[AngleRow] = predicate.to_angle_rows()
-        if not b_rows:
+        rows: list[AngleRow] = predicate.to_angle_rows()
+        if not rows:
             return set()
 
-        implicit_deducitons = set()
-        for row in b_rows:
+        # implicit: row has no data (always zero) → trivially true
+        implicit = set()
+        for row in rows:
             if not row.data:
-                implicit_deducitons.add(Deduction(row.predicate, set(), "AR_implicit"))
-        if implicit_deducitons:
-            return implicit_deducitons
-
-        pred_to_index: dict[Predicate, int] = {
-            pred: i
-            for i, pred in enumerate(set([row.predicate for row in self.rows + b_rows]))
-        }
-        index_to_pred: dict[int, Predicate] = {
-            i: pred for pred, i in pred_to_index.items()
-        }
-        line_to_index: dict[frozenset[Point], int] = {
-            line: i
-            for i, line in enumerate(
-                set(
-                    [line for row in self.rows for line in row.data.keys()]
-                    + [line for row in b_rows for line in row.data.keys()]
-                )
-            )
-        }
-
-        A = np.zeros(
-            (len(pred_to_index), len(line_to_index) + 1)
-        )  # plus one to take care of constants
-
-        seen_predicates: set[Predicate] = set()
-
-        for row in self.rows:
-            if row.predicate in seen_predicates:
-                continue
-            seen_predicates.add(row.predicate)
-
-            row_idx = pred_to_index[row.predicate]
-            for line, value in row.data.items():
-                col_idx = line_to_index[line]
-                if A[row_idx, col_idx] != 0:
-                    print(row.data)
-                    for i in range(len(line_to_index) + 1):
-                        print(A[row_idx, i])
-                    assert False
-                A[row_idx, col_idx] = value
-            A[row_idx, -1] += row.constant
+                implicit.add(Deduction(row.predicate, set(), "AR_implicit"))
+        if implicit:
+            return implicit
 
         deductions = set()
-
-        for b_row in b_rows:
-            b = np.zeros(
-                (len(line_to_index) + 1),
-            )
-            row_idx = pred_to_index[b_row.predicate]
-            for line, value in b_row.data.items():
-                col_idx = line_to_index[line]
-                b[col_idx] = value
-            b[-1] += b_row.constant
-
-            x = is_in_row_span(A, b)
-            if x is None:
+        all_sources: set[Predicate] = set()
+        is_deduced = True
+        for row in rows:
+            if not row.data:
                 continue
+            angle = _angle_row_to_formal(row)
+            simplified, sources = self.elim.simplify(angle)
+            is_deduced &= simplified.is_zero()
+            all_sources |= sources
+        if is_deduced:
+            deductions.add(Deduction(predicate, all_sources, "AR"))
 
-            x = minimize_parents(A, b, x, PARENT_TOL=TOLERANCE)
-
-            parent_predicates: set[Predicate] = set()
-            for i in range(x.shape[0]):
-                # Check if any column has a non-zero entry for this row
-                if np.abs(x[i]) > TOLERANCE:
-                    assert i in index_to_pred
-                    parent_predicates.add(index_to_pred[i])
-            if not parent_predicates:
-                continue
-            deductions.add(Deduction(b_row.predicate, parent_predicates, "AR"))
         return deductions
 
     def __str__(self) -> str:
-        return "\n<AngleMatrix>\n" + "\n".join(
-            str(row) for row in self.rows if not row.is_zero_row
-        )
+        lines = ["\n<AngleAR>"]
+        core = self.elim.core
+        if not core.instantiated:
+            lines.append("(empty)")
+        else:
+            for pivot_var, full_row in core.instantiated.items():
+                rhs = LinComb({
+                    v: c
+                    for v, c in full_row.d.items()
+                    if v is not pivot_var
+                })
+                sources = core.row_sources.get(pivot_var, set())
+                src_str = ", ".join(str(s) for s in sources)
+                lines.append(f"  {pivot_var} = {rhs}  [{src_str}]")
+        return "\n".join(lines)
 
 
-class RatioMatrix:
-    rows: list[RatioRow]
-
-    def __init__(self) -> None:
-        self.rows = []
+class ElimRatioAR:
+    def __init__(self):
+        self.elim = ElimDistMul()
 
     def add_predicate(self, predicate: Predicate) -> None:
-        self.rows.extend(predicate.to_ratio_rows())
+        rows: list[RatioRow] = predicate.to_ratio_rows()
+        for row in rows:
+            if not row.data:
+                continue
+            dist = _ratio_row_to_formal(row)
+            # force_one: the product (in ratio space) equals 1
+            try:
+                self.elim.force_one(dist, sources={predicate})
+            except AssertionError:
+                # numerical mismatch
+                pass
 
     def try_deduce(self, predicate: Predicate) -> set[Deduction]:
-        b_rows: list[RatioRow] = predicate.to_ratio_rows()
-        if not b_rows:
+        rows: list[RatioRow] = predicate.to_ratio_rows()
+        if not rows:
             return set()
 
-        implicit_deducitons = set()
-        for row in b_rows:
+        implicit = set()
+        for row in rows:
             if not row.data:
-                implicit_deducitons.add(Deduction(row.predicate, set(), "AR_implicit"))
-        if implicit_deducitons:
-            return implicit_deducitons
-
-        pred_to_index: dict[Predicate, int] = {
-            pred: i
-            for i, pred in enumerate(set([row.predicate for row in self.rows + b_rows]))
-        }
-        index_to_pred: dict[int, Predicate] = {
-            i: pred for pred, i in pred_to_index.items()
-        }
-        line_to_index: dict[frozenset[Point], int] = {
-            line: i
-            for i, line in enumerate(
-                set(
-                    [line for row in self.rows for line in row.data.keys()]
-                    + [line for row in b_rows for line in row.data.keys()]
-                )
-            )
-        }
-
-        A = np.zeros((len(pred_to_index), len(line_to_index)))
-
-        seen_predicates: set[Predicate] = set()
-
-        for row in self.rows:
-            if row.predicate in seen_predicates:
-                continue
-            seen_predicates.add(row.predicate)
-            row_idx = pred_to_index[row.predicate]
-            for line, value in row.data.items():
-                col_idx = line_to_index[line]
-                assert A[row_idx, col_idx] == 0.0
-                A[row_idx, col_idx] = value
+                implicit.add(Deduction(row.predicate, set(), "AR_implicit"))
+        if implicit:
+            return implicit
 
         deductions = set()
-
-        for b_row in b_rows:
-            b = np.zeros(
-                (len(line_to_index)),
-            )
-            row_idx = pred_to_index[b_row.predicate]
-            for line, value in b_row.data.items():
-                col_idx = line_to_index[line]
-                b[col_idx] = value
-
-            x = is_in_row_span(A, b)
-            if x is None:
+        all_sources: set[Predicate] = set()
+        is_deduced = True
+        for row in rows:
+            if not row.data:
                 continue
+            dist = _ratio_row_to_formal(row)
+            simplified, sources = self.elim.simplify(dist)
+            is_deduced &= simplified.is_one()
+            all_sources |= sources
+        if is_deduced:
+            deductions.add(Deduction(predicate, all_sources, "AR"))
 
-            # Greedily remove unnecessary parents
-            x = minimize_parents(A, b, x, PARENT_TOL=TOLERANCE)
-
-            parent_predicates: set[Predicate] = set()
-            for i in range(x.shape[0]):
-                # Check if any column has a non-zero entry for this row
-                if np.abs(x[i]) > TOLERANCE:
-                    assert i in index_to_pred
-                    parent_predicates.add(index_to_pred[i])
-            if not parent_predicates:
-                continue
-            deductions.add(Deduction(b_row.predicate, parent_predicates, "AR"))
         return deductions
 
     def __str__(self) -> str:
-        return "\n<RatioMatrix>\n" + "\n".join(
-            str(row) for row in self.rows if not row.is_zero_row
-        )
+        lines = ["\n<RatioAR>"]
+        core = self.elim.core
+        if not core.instantiated:
+            lines.append("(empty)")
+        else:
+            for pivot_var, full_row in core.instantiated.items():
+                rhs = LinComb({
+                    v: c
+                    for v, c in full_row.d.items()
+                    if v is not pivot_var
+                })
+                sources = core.row_sources.get(pivot_var, set())
+                src_str = ", ".join(str(s) for s in sources)
+                lines.append(f"  {pivot_var} = {rhs}  [{src_str}]")
+        return "\n".join(lines)
 
 
 class AR:
-    angle_matrix: AngleMatrix
-    ratio_matrix: RatioMatrix
-
-    def __init__(self) -> None:
-        self.angle_matrix = AngleMatrix()
-        self.ratio_matrix = RatioMatrix()
+    def __init__(self):
+        self.angle_elim = ElimAngleAR()
+        self.ratio_elim = ElimRatioAR()
 
     def add_predicate(self, predicate: Predicate) -> None:
-        self.angle_matrix.add_predicate(predicate)
-        self.ratio_matrix.add_predicate(predicate)
+        self.angle_elim.add_predicate(predicate)
+        self.ratio_elim.add_predicate(predicate)
 
     def try_deduce(self, predicate: Predicate) -> set[Deduction]:
-        return self.angle_matrix.try_deduce(predicate).union(
-            self.ratio_matrix.try_deduce(predicate)
+        return (
+            self.angle_elim.try_deduce(predicate)
+            | self.ratio_elim.try_deduce(predicate)
         )
+
+    def __str__(self) -> str:
+        return str(self.angle_elim) + "\n" + str(self.ratio_elim)
