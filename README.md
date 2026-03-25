@@ -7,7 +7,7 @@ This implementation uses [Ascent](https://github.com/s-arash/ascent/tree/master)
 ## Example Problem
 
 ```bash
-❯ uv run solve.py problems/contri_sas
+❯ python solve.py problems/contri_sas
 Initial Predicates:
   cong C A I G
   eqangle C A B F D E
@@ -43,10 +43,22 @@ Added 2020 new predicates
 Solved!
 ```
 
-To run all the problems in this repository use [`uv`](https://docs.astral.sh/uv/) to run:
+## Getting Started
+
+This repo uses [`uv`](https://docs.astral.sh/uv/) to manage the environment. After cloning the repo, run the following to get set up.
 
 ```bash
-find problems -mindepth 1 -maxdepth 1 -type d | sort | xargs -n1 -I{} bash -c 'echo -e "\n\n==> {}" && uv run solve.py "{}"'
+uv sync
+source .venv/bin/activate
+maturin develop
+```
+
+You can then run `python solve.py problems/contri_sas` to solve the example problem above.
+
+To run all the problems in this repository run:
+
+```bash
+find problems -mindepth 1 -maxdepth 1 -type d | sort | xargs -n1 -I{} bash -c 'echo -e "\n\n==> {}" && python solve.py "{}"'
 ```
 
 ## Deductive Database
@@ -79,7 +91,7 @@ cong(a, b, a, b, Provenance::from("rfl", vec![])) <--
     if a != b;
 ```
 
-### More Complex Rule
+### Complex Rule
 
 Here's the rule for ASA congruence. For triangles `ABC` and `DEF` to be congruent by ASA by `contri1`, we also need to check that the two triangles have the same orientation. This means that we need to check the diagram formed by points `ABC` and `DEF` to see if they are oriented the same way (both clockwise or both counterclockwise). We can access the coordinates of the points using the `point` relation and use a helper function `same_orientation` to check the orientation.
 
